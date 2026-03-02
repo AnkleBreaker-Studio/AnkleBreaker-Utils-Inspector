@@ -1,0 +1,3 @@
+[FEAT] Utils.Inspector, initial extraction from AnkleBreaker-Utils monolithic package
+[FEAT] Utils.Inspector, custom ButtonAttribute + ButtonEditor replacing EasyButtons dependency
+[FEAT] Utils.Inspector, unit tests for all attributes and button drawer

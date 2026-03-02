@@ -6,7 +6,7 @@
   "unity": "2022.3",
   "type": "library",
   "repository": {
-    "url": "https://github.com/AnkleBreaker-Studio/utils-inspector.git",
+    "url": "https://github.com/AnkleBreaker-Studio/AnkleBreaker-Utils-Inspector.git",
     "type": "git"
   },
   "author": {
