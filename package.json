@@ -1,12 +1,12 @@
 {
   "name": "com.anklebreaker-studio.utils.inspector",
   "version": "1.0.0",
-  "displayName": "AnkleBreaker Utils - Inspector",
+  "displayName": "AnkleBreaker-studio Utils Inspector",
   "description": "Custom inspector attributes and property drawers for Unity Editor. Part of the AnkleBreaker Utils split.",
   "unity": "2022.3",
   "type": "library",
   "repository": {
-    "url": "https://github.com/AnkleBreaker-Studio/utils-inspector.git",
+    "url": "https://github.com/AnkleBreaker-Studio/AnkleBreaker-Utils-Inspector.git",
     "type": "git"
   },
   "author": {
