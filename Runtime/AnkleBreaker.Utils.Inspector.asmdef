@@ -1,0 +1,14 @@
+{
+    "name": "AnkleBreaker.Utils.Inspector",
+    "rootNamespace": "AnkleBreaker.Utils.Inspector",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

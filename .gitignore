@@ -1,0 +1,10 @@
+# Unity meta files are included (needed for UPM)
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vs/
+*.sln
+*.csproj
