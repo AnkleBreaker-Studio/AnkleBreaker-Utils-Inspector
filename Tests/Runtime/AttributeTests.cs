@@ -268,11 +268,11 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         }
 
         [Test]
-        public void AutoCompleteTextAttribute_NullTooltips_DefaultsToEmpty()
+        public void AutoCompleteTextAttribute_NullTooltips_DefaultsToKeysLength()
         {
             var attr = new AutoCompleteTextAttribute(new[] { "a" });
             Assert.IsNotNull(attr.ToolTips);
-            Assert.AreEqual(0, attr.ToolTips.Length);
+            Assert.AreEqual(1, attr.ToolTips.Length);
         }
 
         [Test]
