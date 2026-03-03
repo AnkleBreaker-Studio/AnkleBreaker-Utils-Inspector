@@ -6,7 +6,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
     [CustomPropertyDrawer(typeof(ToggleButtonAttribute))]
     public class ToggleButtonDrawer : PropertyDrawer
     {
-        private static readonly Color ActiveColor = new Color(0.3f, 0.7f, 0.3f, 1f);
+        private static readonly Color ActiveColor = new Color(0.3f, 0.5f, 0.85f, 1f);
         private static readonly Color InactiveColor = new Color(0.6f, 0.6f, 0.6f, 1f);
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -21,9 +21,13 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
             string trueLabel = string.IsNullOrEmpty(toggle.TrueLabel) ? property.displayName : toggle.TrueLabel;
             string falseLabel = string.IsNullOrEmpty(toggle.FalseLabel) ? trueLabel : toggle.FalseLabel;
-            string buttonText = property.boolValue ? trueLabel : falseLabel;
+            string baseText = property.boolValue ? trueLabel : falseLabel;
+            string stateTag = property.boolValue ? " (ON)" : " (OFF)";
+            string buttonText = baseText + stateTag;
 
-            position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+            Rect buttonRect = position;
+            if (!toggle.FullWidth)
+                buttonRect = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
 
             Color previousColor = GUI.backgroundColor;
             GUI.backgroundColor = property.boolValue ? ActiveColor : InactiveColor;
@@ -33,7 +37,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 fontStyle = property.boolValue ? FontStyle.Bold : FontStyle.Normal
             };
 
-            if (GUI.Button(position, buttonText, buttonStyle))
+            if (GUI.Button(buttonRect, buttonText, buttonStyle))
             {
                 property.boolValue = !property.boolValue;
             }
