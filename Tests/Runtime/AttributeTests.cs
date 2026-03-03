@@ -285,6 +285,93 @@ namespace AnkleBreaker.Utils.Inspector.Tests
 
         #endregion
 
+        #region FreeRange Tests
+
+        [Test]
+        public void FreeRangeAttribute_StoresMinMax()
+        {
+            var attr = new FreeRangeAttribute(0f, 100f);
+            Assert.AreEqual(0f, attr.Min);
+            Assert.AreEqual(100f, attr.Max);
+        }
+
+        [Test]
+        public void FreeRangeAttribute_NegativeRange()
+        {
+            var attr = new FreeRangeAttribute(-50f, 50f);
+            Assert.AreEqual(-50f, attr.Min);
+            Assert.AreEqual(50f, attr.Max);
+        }
+
+        [Test]
+        public void FreeRangeAttribute_IsPropertyAttribute()
+        {
+            var attr = new FreeRangeAttribute(0f, 1f);
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        #endregion
+
+        #region Required Tests
+
+        [Test]
+        public void RequiredAttribute_DefaultMessage_IsNull()
+        {
+            var attr = new RequiredAttribute();
+            Assert.IsNull(attr.Message);
+        }
+
+        [Test]
+        public void RequiredAttribute_CustomMessage_Stored()
+        {
+            var attr = new RequiredAttribute("This field is mandatory!");
+            Assert.AreEqual("This field is mandatory!", attr.Message);
+        }
+
+        [Test]
+        public void RequiredAttribute_IsPropertyAttribute()
+        {
+            var attr = new RequiredAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        #endregion
+
+        #region ToggleButton Tests
+
+        [Test]
+        public void ToggleButtonAttribute_DefaultLabels_AreNull()
+        {
+            var attr = new ToggleButtonAttribute();
+            Assert.IsNull(attr.TrueLabel);
+            Assert.IsNull(attr.FalseLabel);
+        }
+
+        [Test]
+        public void ToggleButtonAttribute_SingleLabel()
+        {
+            var attr = new ToggleButtonAttribute("Active");
+            Assert.AreEqual("Active", attr.TrueLabel);
+            Assert.IsNull(attr.FalseLabel);
+        }
+
+        [Test]
+        public void ToggleButtonAttribute_DualLabels()
+        {
+            var attr = new ToggleButtonAttribute("ON", "OFF");
+            Assert.AreEqual("ON", attr.TrueLabel);
+            Assert.AreEqual("OFF", attr.FalseLabel);
+        }
+
+        [Test]
+        public void ToggleButtonAttribute_IsPropertyAttribute()
+        {
+            var attr = new ToggleButtonAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        #endregion
+
         #region SerializedDictionary Tests
 
         [Test]
