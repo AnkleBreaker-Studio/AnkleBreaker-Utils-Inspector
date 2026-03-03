@@ -23,7 +23,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         /// <returns>The boolean result of the condition, or <paramref name="fallback"/> if not found.</returns>
         public static bool Evaluate(SerializedProperty property, string conditionName, bool fallback = false)
         {
-            Object targetObject = property.serializedObject.targetObject;
+            object targetObject = property.serializedObject.targetObject;
             Type targetType = targetObject.GetType();
 
             FieldInfo field = targetType.GetField(conditionName, Flags);
