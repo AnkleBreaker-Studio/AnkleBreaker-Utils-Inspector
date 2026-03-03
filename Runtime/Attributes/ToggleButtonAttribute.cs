@@ -15,6 +15,9 @@ namespace AnkleBreaker.Utils.Inspector
     /// 
     /// [ToggleButton("Enabled", "Disabled")]
     /// public bool featureToggle;
+    /// 
+    /// [ToggleButton(fullWidth: false)]
+    /// public bool smallToggle;
     /// </code></example>
     public class ToggleButtonAttribute : PropertyAttribute
     {
@@ -24,10 +27,14 @@ namespace AnkleBreaker.Utils.Inspector
         /// <summary>Text shown when the value is false. If null, uses TrueLabel for both states.</summary>
         public string FalseLabel { get; private set; }
 
-        public ToggleButtonAttribute(string trueLabel = null, string falseLabel = null)
+        /// <summary>If true (default), the button takes the full line. If false, shows label + smaller button.</summary>
+        public bool FullWidth { get; private set; }
+
+        public ToggleButtonAttribute(string trueLabel = null, string falseLabel = null, bool fullWidth = true)
         {
             TrueLabel = trueLabel;
             FalseLabel = falseLabel;
+            FullWidth = fullWidth;
         }
     }
 }
