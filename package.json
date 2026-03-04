@@ -1,6 +1,6 @@
 {
   "name": "com.anklebreaker-studio.utils.inspector",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "AnkleBreaker-studio Utils Inspector",
   "description": "Custom inspector attributes and property drawers for Unity Editor. Part of the AnkleBreaker Utils split.",
   "unity": "2022.3",
