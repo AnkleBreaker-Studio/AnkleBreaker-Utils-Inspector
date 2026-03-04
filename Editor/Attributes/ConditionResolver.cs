@@ -6,8 +6,9 @@ using UnityEngine;
 namespace AnkleBreaker.Utils.Inspector.Editor
 {
     /// <summary>
-    /// Shared utility for resolving boolean conditions by name.
-    /// Used by HideIfDrawer and ShowIfDrawer to evaluate fields, properties, or methods.
+    /// Shared utility for resolving conditions by name.
+    /// Used by HideIfDrawer, ShowIfDrawer, and EnableIfDrawer to evaluate fields, properties, or methods.
+    /// Supports both boolean conditions and value comparisons (enum, int, string).
     /// </summary>
     internal static class ConditionResolver
     {
@@ -17,10 +18,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         /// Evaluates a named boolean condition on the target object of a SerializedProperty.
         /// Looks for a field, property, or parameterless method returning bool.
         /// </summary>
-        /// <param name="property">The serialized property whose target object owns the condition.</param>
-        /// <param name="conditionName">Name of the field, property, or method to evaluate.</param>
-        /// <param name="fallback">Value returned if the condition cannot be found.</param>
-        /// <returns>The boolean result of the condition, or <paramref name="fallback"/> if not found.</returns>
         public static bool Evaluate(SerializedProperty property, string conditionName, bool fallback = false)
         {
             object targetObject = property.serializedObject.targetObject;
@@ -39,8 +36,53 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 return (bool)method.Invoke(targetObject, null);
 
             Debug.LogWarning(
-                $"No matching boolean field, property, or method found for condition: {conditionName}");
+                $"[ConditionResolver] No matching boolean field, property, or method found for condition: {conditionName}");
             return fallback;
+        }
+
+        /// <summary>
+        /// Evaluates whether a named field/property equals the given compare value.
+        /// Supports enums (compared as int), ints, and strings.
+        /// </summary>
+        public static bool EvaluateComparison(SerializedProperty property, string fieldName, object compareValue, bool fallback = false)
+        {
+            object targetObject = property.serializedObject.targetObject;
+            Type targetType = targetObject.GetType();
+
+            // Try field
+            FieldInfo field = targetType.GetField(fieldName, Flags);
+            if (field != null)
+                return CompareValues(field.GetValue(targetObject), compareValue);
+
+            // Try property
+            PropertyInfo prop = targetType.GetProperty(fieldName, Flags);
+            if (prop != null)
+                return CompareValues(prop.GetValue(targetObject), compareValue);
+
+            Debug.LogWarning(
+                $"[ConditionResolver] No matching field or property found for comparison: {fieldName}");
+            return fallback;
+        }
+
+        private static bool CompareValues(object fieldValue, object compareValue)
+        {
+            if (fieldValue == null && compareValue == null) return true;
+            if (fieldValue == null || compareValue == null) return false;
+
+            // Enum comparison: compare as int
+            if (fieldValue.GetType().IsEnum && compareValue is int intVal)
+                return Convert.ToInt32(fieldValue) == intVal;
+
+            // Int comparison
+            if (fieldValue is int fieldInt && compareValue is int cmpInt)
+                return fieldInt == cmpInt;
+
+            // String comparison
+            if (fieldValue is string fieldStr && compareValue is string cmpStr)
+                return string.Equals(fieldStr, cmpStr, StringComparison.Ordinal);
+
+            // Fallback: generic Equals
+            return fieldValue.Equals(compareValue);
         }
     }
 }

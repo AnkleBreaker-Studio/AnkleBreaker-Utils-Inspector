@@ -8,16 +8,23 @@ namespace AnkleBreaker.Utils.Inspector.Editor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            bool shouldHide = ConditionResolver.Evaluate(property, ((HideIfAttribute)attribute).ConditionName);
-
-            if (!shouldHide)
+            if (!ShouldHide(property))
                 EditorGUI.PropertyField(position, property, label, true);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            bool shouldHide = ConditionResolver.Evaluate(property, ((HideIfAttribute)attribute).ConditionName);
-            return shouldHide ? 0 : EditorGUI.GetPropertyHeight(property, label, true);
+            return ShouldHide(property) ? 0 : EditorGUI.GetPropertyHeight(property, label, true);
+        }
+
+        private bool ShouldHide(SerializedProperty property)
+        {
+            HideIfAttribute attr = (HideIfAttribute)attribute;
+
+            if (attr.HasCompareValue)
+                return ConditionResolver.EvaluateComparison(property, attr.ConditionName, attr.CompareValue);
+
+            return ConditionResolver.Evaluate(property, attr.ConditionName);
         }
     }
 }
