@@ -6,8 +6,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
     [CustomPropertyDrawer(typeof(ToggleButtonAttribute))]
     public class ToggleButtonDrawer : PropertyDrawer
     {
-        private static readonly Color ActiveColor = new Color(0.3f, 0.5f, 0.85f, 1f);
-        private static readonly Color InactiveColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+        private static readonly Color DefaultActiveColor = new Color(0.6f, 0.9f, 0.65f, 1f);
+        private static readonly Color InactiveColor = new Color(0.9f, 0.6f, 0.6f, 1f);
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -30,7 +30,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 buttonRect = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
 
             Color previousColor = GUI.backgroundColor;
-            GUI.backgroundColor = property.boolValue ? ActiveColor : InactiveColor;
+            GUI.backgroundColor = property.boolValue ? DefaultActiveColor : InactiveColor;
 
             GUIStyle buttonStyle = new GUIStyle(GUI.skin.button)
             {
