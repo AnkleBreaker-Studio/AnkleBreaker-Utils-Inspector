@@ -22,8 +22,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             string trueLabel = string.IsNullOrEmpty(toggle.TrueLabel) ? property.displayName : toggle.TrueLabel;
             string falseLabel = string.IsNullOrEmpty(toggle.FalseLabel) ? trueLabel : toggle.FalseLabel;
             string baseText = property.boolValue ? trueLabel : falseLabel;
-            string stateTag = property.boolValue ? " (ON)" : " (OFF)";
-            string buttonText = baseText + stateTag;
+            string buttonText = baseText;
 
             Rect buttonRect = position;
             if (!toggle.FullWidth)
