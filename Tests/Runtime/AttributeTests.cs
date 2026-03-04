@@ -130,6 +130,24 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         {
             var attr = new ShowIfAttribute("myBool");
             Assert.AreEqual("myBool", attr.ConditionName);
+            Assert.IsFalse(attr.HasCompareValue);
+        }
+
+        [Test]
+        public void ShowIfAttribute_WithIntComparison()
+        {
+            var attr = new ShowIfAttribute("myEnum", 2);
+            Assert.AreEqual("myEnum", attr.ConditionName);
+            Assert.IsTrue(attr.HasCompareValue);
+            Assert.AreEqual(2, attr.CompareValue);
+        }
+
+        [Test]
+        public void ShowIfAttribute_WithStringComparison()
+        {
+            var attr = new ShowIfAttribute("myField", "hello");
+            Assert.IsTrue(attr.HasCompareValue);
+            Assert.AreEqual("hello", attr.CompareValue);
         }
 
         [Test]
@@ -137,6 +155,15 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         {
             var attr = new HideIfAttribute("myBool");
             Assert.AreEqual("myBool", attr.ConditionName);
+            Assert.IsFalse(attr.HasCompareValue);
+        }
+
+        [Test]
+        public void HideIfAttribute_WithIntComparison()
+        {
+            var attr = new HideIfAttribute("mode", 1);
+            Assert.IsTrue(attr.HasCompareValue);
+            Assert.AreEqual(1, attr.CompareValue);
         }
 
         [Test]
@@ -155,6 +182,404 @@ namespace AnkleBreaker.Utils.Inspector.Tests
             var attr = field.GetCustomAttribute<HideIfAttribute>();
             Assert.IsNotNull(attr);
             Assert.AreEqual("isHidden", attr.ConditionName);
+        }
+
+        #endregion
+
+        #region EnableIf Tests
+
+        [Test]
+        public void EnableIfAttribute_StoresBoolCondition()
+        {
+            var attr = new EnableIfAttribute("isReady");
+            Assert.AreEqual("isReady", attr.ConditionName);
+            Assert.IsFalse(attr.HasCompareValue);
+        }
+
+        [Test]
+        public void EnableIfAttribute_WithIntComparison()
+        {
+            var attr = new EnableIfAttribute("mode", 3);
+            Assert.IsTrue(attr.HasCompareValue);
+            Assert.AreEqual(3, attr.CompareValue);
+        }
+
+        [Test]
+        public void EnableIfAttribute_WithStringComparison()
+        {
+            var attr = new EnableIfAttribute("type", "advanced");
+            Assert.IsTrue(attr.HasCompareValue);
+            Assert.AreEqual("advanced", attr.CompareValue);
+        }
+
+        #endregion
+
+        #region ProgressBar Tests
+
+        [Test]
+        public void ProgressBarAttribute_StoresMinMax()
+        {
+            var attr = new ProgressBarAttribute(0f, 100f);
+            Assert.AreEqual(0f, attr.Min);
+            Assert.AreEqual(100f, attr.Max);
+        }
+
+        [Test]
+        public void ProgressBarAttribute_DefaultColor()
+        {
+            var attr = new ProgressBarAttribute(0, 1);
+            Assert.AreEqual(0.2f, attr.R, 0.01f);
+            Assert.AreEqual(0.6f, attr.G, 0.01f);
+            Assert.AreEqual(0.9f, attr.B, 0.01f);
+        }
+
+        [Test]
+        public void ProgressBarAttribute_CustomColor()
+        {
+            var attr = new ProgressBarAttribute(0, 1, "HP", 1f, 0f, 0f);
+            Assert.AreEqual("HP", attr.Label);
+            Assert.AreEqual(1f, attr.R, 0.01f);
+            Assert.AreEqual(0f, attr.G, 0.01f);
+        }
+
+        #endregion
+
+        #region SectionHeader Tests
+
+        [Test]
+        public void SectionHeaderAttribute_StoresTitle()
+        {
+            var attr = new SectionHeaderAttribute("My Section");
+            Assert.AreEqual("My Section", attr.Title);
+        }
+
+        #endregion
+
+        #region BoxGroup Tests
+
+        [Test]
+        public void BoxGroupAttribute_StoresGroupName()
+        {
+            var attr = new BoxGroupAttribute("Settings");
+            Assert.AreEqual("Settings", attr.GroupName);
+        }
+
+        #endregion
+
+        #region FoldoutGroup Tests
+
+        [Test]
+        public void FoldoutGroupAttribute_StoresGroupName()
+        {
+            var attr = new FoldoutGroupAttribute("Advanced");
+            Assert.AreEqual("Advanced", attr.GroupName);
+        }
+
+        #endregion
+
+        #region TabGroup Tests
+
+        [Test]
+        public void TabGroupAttribute_StoresTabName()
+        {
+            var attr = new TabGroupAttribute("General");
+            Assert.AreEqual("General", attr.TabName);
+        }
+
+        #endregion
+
+        #region HorizontalGroup Tests
+
+        [Test]
+        public void HorizontalGroupAttribute_StoresGroupName()
+        {
+            var attr = new HorizontalGroupAttribute("row1");
+            Assert.AreEqual("row1", attr.GroupName);
+            Assert.AreEqual(0f, attr.Width, 0.01f);
+        }
+
+        [Test]
+        public void HorizontalGroupAttribute_CustomWidth()
+        {
+            var attr = new HorizontalGroupAttribute("row1", 0.5f);
+            Assert.AreEqual(0.5f, attr.Width, 0.01f);
+        }
+
+        #endregion
+
+        #region InlineButton Tests
+
+        [Test]
+        public void InlineButtonAttribute_StoresMethodName()
+        {
+            var attr = new InlineButtonAttribute("DoSomething");
+            Assert.AreEqual("DoSomething", attr.MethodName);
+            Assert.IsNull(attr.Label);
+        }
+
+        [Test]
+        public void InlineButtonAttribute_CustomLabel()
+        {
+            var attr = new InlineButtonAttribute("Reset", "X");
+            Assert.AreEqual("X", attr.Label);
+        }
+
+        #endregion
+
+        #region ValueDropdown Tests
+
+        [Test]
+        public void ValueDropdownAttribute_StoresMemberName()
+        {
+            var attr = new ValueDropdownAttribute("GetOptions");
+            Assert.AreEqual("GetOptions", attr.MemberName);
+        }
+
+        #endregion
+
+        #region OnValueChanged Tests
+
+        [Test]
+        public void OnValueChangedAttribute_StoresMethodName()
+        {
+            var attr = new OnValueChangedAttribute("OnChanged");
+            Assert.AreEqual("OnChanged", attr.MethodName);
+        }
+
+        #endregion
+
+        #region MinMaxSlider Tests
+
+        [Test]
+        public void MinMaxSliderAttribute_StoresMinMax()
+        {
+            var attr = new MinMaxSliderAttribute(0f, 10f);
+            Assert.AreEqual(0f, attr.Min);
+            Assert.AreEqual(10f, attr.Max);
+        }
+
+        #endregion
+
+        #region InfoBox Tests
+
+        [Test]
+        public void InfoBoxAttribute_StoresMessage()
+        {
+            var attr = new InfoBoxAttribute("Warning!", InfoMessageType.Warning);
+            Assert.AreEqual("Warning!", attr.Message);
+            Assert.AreEqual(InfoMessageType.Warning, attr.Type);
+        }
+
+        [Test]
+        public void InfoBoxAttribute_DefaultType()
+        {
+            var attr = new InfoBoxAttribute("Info");
+            Assert.AreEqual(InfoMessageType.Info, attr.Type);
+            Assert.IsNull(attr.VisibleIf);
+        }
+
+        [Test]
+        public void InfoBoxAttribute_WithCondition()
+        {
+            var attr = new InfoBoxAttribute("Msg", InfoMessageType.Error, "showError");
+            Assert.AreEqual("showError", attr.VisibleIf);
+        }
+
+        #endregion
+
+        #region PropertyOrder Tests
+
+        [Test]
+        public void PropertyOrderAttribute_StoresOrder()
+        {
+            var attr = new PropertyOrderAttribute(5);
+            Assert.AreEqual(5, attr.Order);
+        }
+
+        [Test]
+        public void PropertyOrderAttribute_NegativeOrder()
+        {
+            var attr = new PropertyOrderAttribute(-10);
+            Assert.AreEqual(-10, attr.Order);
+        }
+
+        #endregion
+
+        #region PropertySpace Tests
+
+        [Test]
+        public void PropertySpaceAttribute_DefaultValues()
+        {
+            var attr = new PropertySpaceAttribute();
+            Assert.AreEqual(8f, attr.SpaceBefore, 0.01f);
+            Assert.AreEqual(0f, attr.SpaceAfter, 0.01f);
+        }
+
+        [Test]
+        public void PropertySpaceAttribute_CustomValues()
+        {
+            var attr = new PropertySpaceAttribute(16f, 8f);
+            Assert.AreEqual(16f, attr.SpaceBefore, 0.01f);
+            Assert.AreEqual(8f, attr.SpaceAfter, 0.01f);
+        }
+
+        #endregion
+
+        #region SuffixLabel Tests
+
+        [Test]
+        public void SuffixLabelAttribute_StoresSuffix()
+        {
+            var attr = new SuffixLabelAttribute("ms");
+            Assert.AreEqual("ms", attr.Suffix);
+        }
+
+        #endregion
+
+        #region EnumToggleButtons Tests
+
+        [Test]
+        public void EnumToggleButtonsAttribute_IsPropertyAttribute()
+        {
+            var attr = new EnumToggleButtonsAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        #endregion
+
+        #region PreviewField Tests
+
+        [Test]
+        public void PreviewFieldAttribute_DefaultHeight()
+        {
+            var attr = new PreviewFieldAttribute();
+            Assert.AreEqual(64f, attr.PreviewHeight, 0.01f);
+        }
+
+        [Test]
+        public void PreviewFieldAttribute_CustomHeight()
+        {
+            var attr = new PreviewFieldAttribute(128f);
+            Assert.AreEqual(128f, attr.PreviewHeight, 0.01f);
+        }
+
+        #endregion
+
+        #region ValidateInput Tests
+
+        [Test]
+        public void ValidateInputAttribute_StoresValues()
+        {
+            var attr = new ValidateInputAttribute("IsValid", "Must be valid!", ValidateMessageType.Warning);
+            Assert.AreEqual("IsValid", attr.ValidatorMethod);
+            Assert.AreEqual("Must be valid!", attr.Message);
+            Assert.AreEqual(ValidateMessageType.Warning, attr.MessageType);
+        }
+
+        [Test]
+        public void ValidateInputAttribute_DefaultMessage()
+        {
+            var attr = new ValidateInputAttribute("Check");
+            Assert.AreEqual("Validation failed", attr.Message);
+            Assert.AreEqual(ValidateMessageType.Error, attr.MessageType);
+        }
+
+        #endregion
+
+        #region ShowInInspector Tests
+
+        [Test]
+        public void ShowInInspectorAttribute_IsRegularAttribute()
+        {
+            var attr = new ShowInInspectorAttribute();
+            Assert.IsInstanceOf<Attribute>(attr);
+            Assert.IsNotInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        [Test]
+        public void ShowInInspectorAttribute_TargetsFieldsAndProperties()
+        {
+            var usage = typeof(ShowInInspectorAttribute).GetCustomAttribute<AttributeUsageAttribute>();
+            Assert.IsNotNull(usage);
+            Assert.IsTrue((usage.ValidOn & AttributeTargets.Field) != 0);
+            Assert.IsTrue((usage.ValidOn & AttributeTargets.Property) != 0);
+        }
+
+        #endregion
+
+        #region InlineEditor Tests
+
+        [Test]
+        public void InlineEditorAttribute_DefaultDrawHeader()
+        {
+            var attr = new InlineEditorAttribute();
+            Assert.IsTrue(attr.DrawHeader);
+        }
+
+        [Test]
+        public void InlineEditorAttribute_NoHeader()
+        {
+            var attr = new InlineEditorAttribute(false);
+            Assert.IsFalse(attr.DrawHeader);
+        }
+
+        #endregion
+
+        #region TableList Tests
+
+        [Test]
+        public void TableListAttribute_DefaultValues()
+        {
+            var attr = new TableListAttribute();
+            Assert.IsTrue(attr.ShowPaging);
+            Assert.AreEqual(20, attr.MaxItemsPerPage);
+        }
+
+        [Test]
+        public void TableListAttribute_CustomValues()
+        {
+            var attr = new TableListAttribute(false, 10);
+            Assert.IsFalse(attr.ShowPaging);
+            Assert.AreEqual(10, attr.MaxItemsPerPage);
+        }
+
+        #endregion
+
+        #region GUIColor Tests
+
+        [Test]
+        public void GUIColorAttribute_StoresColor()
+        {
+            var attr = new GUIColorAttribute(1f, 0.5f, 0f);
+            Assert.AreEqual(1f, attr.R, 0.01f);
+            Assert.AreEqual(0.5f, attr.G, 0.01f);
+            Assert.AreEqual(0f, attr.B, 0.01f);
+            Assert.AreEqual(1f, attr.A, 0.01f);
+        }
+
+        [Test]
+        public void GUIColorAttribute_CustomAlpha()
+        {
+            var attr = new GUIColorAttribute(1f, 1f, 1f, 0.5f);
+            Assert.AreEqual(0.5f, attr.A, 0.01f);
+        }
+
+        #endregion
+
+        #region DisableInPlayMode / DisableInEditorMode Tests
+
+        [Test]
+        public void DisableInPlayModeAttribute_IsPropertyAttribute()
+        {
+            var attr = new DisableInPlayModeAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        [Test]
+        public void DisableInEditorModeAttribute_IsPropertyAttribute()
+        {
+            var attr = new DisableInEditorModeAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
         }
 
         #endregion

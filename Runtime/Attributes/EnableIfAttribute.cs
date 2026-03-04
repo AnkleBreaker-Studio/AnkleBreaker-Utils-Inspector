@@ -4,26 +4,26 @@ using UnityEngine;
 namespace AnkleBreaker.Utils.Inspector
 {
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
-    public class HideIfAttribute : PropertyAttribute
+    public class EnableIfAttribute : PropertyAttribute
     {
         public string ConditionName { get; private set; }
         public object CompareValue { get; private set; }
         public bool HasCompareValue { get; private set; }
 
         /// <summary>
-        /// Hide the field when the boolean condition is true.
+        /// Enable the field when the boolean condition is true. Grayed out otherwise.
         /// </summary>
-        public HideIfAttribute(string conditionName)
+        public EnableIfAttribute(string conditionName)
         {
             ConditionName = conditionName;
             HasCompareValue = false;
         }
 
         /// <summary>
-        /// Hide the field when the target field equals the given int value.
+        /// Enable the field when the target field equals the given int value.
         /// Works with enums cast to int (e.g. (int)MyEnum.Value).
         /// </summary>
-        public HideIfAttribute(string fieldName, int compareValue)
+        public EnableIfAttribute(string fieldName, int compareValue)
         {
             ConditionName = fieldName;
             CompareValue = compareValue;
@@ -31,9 +31,9 @@ namespace AnkleBreaker.Utils.Inspector
         }
 
         /// <summary>
-        /// Hide the field when the target field equals the given string value.
+        /// Enable the field when the target field equals the given string value.
         /// </summary>
-        public HideIfAttribute(string fieldName, string compareValue)
+        public EnableIfAttribute(string fieldName, string compareValue)
         {
             ConditionName = fieldName;
             CompareValue = compareValue;

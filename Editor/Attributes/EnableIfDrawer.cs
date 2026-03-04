@@ -3,23 +3,25 @@ using UnityEngine;
 
 namespace AnkleBreaker.Utils.Inspector.Editor
 {
-    [CustomPropertyDrawer(typeof(ShowIfAttribute))]
-    public class ShowIfDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(EnableIfAttribute))]
+    public class EnableIfDrawer : PropertyDrawer
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (ShouldShow(property))
-                EditorGUI.PropertyField(position, property, label, true);
+            bool wasEnabled = GUI.enabled;
+            GUI.enabled = IsEnabled(property);
+            EditorGUI.PropertyField(position, property, label, true);
+            GUI.enabled = wasEnabled;
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return ShouldShow(property) ? EditorGUI.GetPropertyHeight(property, label, true) : 0;
+            return EditorGUI.GetPropertyHeight(property, label, true);
         }
 
-        private bool ShouldShow(SerializedProperty property)
+        private bool IsEnabled(SerializedProperty property)
         {
-            ShowIfAttribute attr = (ShowIfAttribute)attribute;
+            EnableIfAttribute attr = (EnableIfAttribute)attribute;
 
             if (attr.HasCompareValue)
                 return ConditionResolver.EvaluateComparison(property, attr.ConditionName, attr.CompareValue);
