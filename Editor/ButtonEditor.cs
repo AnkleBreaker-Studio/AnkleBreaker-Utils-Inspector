@@ -69,6 +69,15 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             public string HorizontalGroup;
             public float HorizontalWidth;
             public int Order;
+            public int OriginalIndex;
+
+            // Conditional visibility / enable (handled at editor level, not drawer)
+            public ShowIfAttribute ShowIf;
+            public HideIfAttribute HideIf;
+            public EnableIfAttribute EnableIf;
+
+            // SectionHeader (handled at editor level to avoid conflict with HorizontalGroup)
+            public string SectionHeaderTitle;
         }
 
         private List<PropertyEntry> CollectPropertyEntries()
@@ -110,13 +119,27 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
                     var orderAttr = field.GetCustomAttribute<PropertyOrderAttribute>();
                     if (orderAttr != null) entry.Order = orderAttr.Order;
+
+                    // Conditional attributes (evaluated at editor level to free up PropertyDrawer slot)
+                    entry.ShowIf = field.GetCustomAttribute<ShowIfAttribute>();
+                    entry.HideIf = field.GetCustomAttribute<HideIfAttribute>();
+                    entry.EnableIf = field.GetCustomAttribute<EnableIfAttribute>();
+
+                    // SectionHeader (drawn at editor level to avoid conflict with HorizontalGroup)
+                    var sectionHeader = field.GetCustomAttribute<SectionHeaderAttribute>();
+                    if (sectionHeader != null) entry.SectionHeaderTitle = sectionHeader.Title;
                 }
 
+                entry.OriginalIndex = entries.Count;
                 entries.Add(entry);
             }
             while (prop.NextVisible(false));
 
-            entries.Sort((a, b) => a.Order.CompareTo(b.Order));
+            entries.Sort((a, b) =>
+            {
+                int c = a.Order.CompareTo(b.Order);
+                return c != 0 ? c : a.OriginalIndex.CompareTo(b.OriginalIndex);
+            });
             return entries;
         }
 
@@ -206,6 +229,52 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     currentHoriz = entry.HorizontalGroup;
                 }
 
+                // --- SectionHeader: draw before horizontal group to avoid layout conflict ---
+                if (entry.SectionHeaderTitle != null && entry.HorizontalGroup != null)
+                {
+                    // Close existing horizontal if any, draw header outside, then let transition reopen
+                    if (currentHoriz != null) { EndHorizontal(); currentHoriz = null; }
+                    SectionHeaderDrawer.DrawManualSectionHeader(entry.SectionHeaderTitle);
+                    SectionHeaderDrawer.SuppressNextDraw = true;
+                }
+
+                // --- Conditional visibility (ShowIf / HideIf) ---
+                bool visible = true;
+                if (entry.ShowIf != null)
+                {
+                    visible = entry.ShowIf.HasCompareValue
+                        ? ConditionResolver.EvaluateComparison(entry.Property, entry.ShowIf.ConditionName, entry.ShowIf.CompareValue, false)
+                        : ConditionResolver.Evaluate(entry.Property, entry.ShowIf.ConditionName, false);
+                }
+                if (entry.HideIf != null)
+                {
+                    bool hideResult = entry.HideIf.HasCompareValue
+                        ? ConditionResolver.EvaluateComparison(entry.Property, entry.HideIf.ConditionName, entry.HideIf.CompareValue, false)
+                        : ConditionResolver.Evaluate(entry.Property, entry.HideIf.ConditionName, false);
+                    if (hideResult) visible = false;
+                }
+
+                if (!visible)
+                {
+                    // If inside a horizontal group, still need to account for layout
+                    if (entry.HorizontalGroup != null)
+                    {
+                        // Draw an invisible placeholder to keep horizontal layout stable
+                        // (skip entirely — the group will still close properly)
+                    }
+                    continue;
+                }
+
+                // --- Conditional enable (EnableIf) ---
+                bool wasEnabled = GUI.enabled;
+                if (entry.EnableIf != null)
+                {
+                    bool enableResult = entry.EnableIf.HasCompareValue
+                        ? ConditionResolver.EvaluateComparison(entry.Property, entry.EnableIf.ConditionName, entry.EnableIf.CompareValue, true)
+                        : ConditionResolver.Evaluate(entry.Property, entry.EnableIf.ConditionName, true);
+                    GUI.enabled = enableResult;
+                }
+
                 // Draw the property
                 if (entry.HorizontalGroup != null && entry.HorizontalWidth > 0)
                     GUILayout.BeginVertical(GUILayout.Width(EditorGUIUtility.currentViewWidth * entry.HorizontalWidth));
@@ -216,6 +285,10 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
                 if (entry.HorizontalGroup != null)
                     GUILayout.EndVertical();
+
+                // Restore enable state
+                if (entry.EnableIf != null)
+                    GUI.enabled = wasEnabled;
             }
 
             // Close any open groups
