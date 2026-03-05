@@ -865,6 +865,210 @@ namespace AnkleBreaker.Utils.Inspector.Tests
 
         #endregion
 
+        #region TagField / LayerField / Indent Tests
+
+        [Test]
+        public void TagFieldAttribute_IsPropertyAttribute()
+        {
+            var attr = new TagFieldAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        [Test]
+        public void LayerFieldAttribute_IsPropertyAttribute()
+        {
+            var attr = new LayerFieldAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        [Test]
+        public void IndentAttribute_StoresLevel()
+        {
+            var attr = new IndentAttribute(3);
+            Assert.AreEqual(3, attr.Level);
+        }
+
+        [Test]
+        public void IndentAttribute_DefaultLevel()
+        {
+            var attr = new IndentAttribute();
+            Assert.AreEqual(1, attr.Level);
+        }
+
+        #endregion
+
+        #region FilePath Tests
+
+        [Test]
+        public void FilePathAttribute_DefaultValues()
+        {
+            var attr = new FilePathAttribute();
+            Assert.IsNull(attr.Extensions);
+            Assert.IsFalse(attr.AbsolutePath);
+        }
+
+        [Test]
+        public void FilePathAttribute_CustomExtensions()
+        {
+            var attr = new FilePathAttribute { Extensions = "png,jpg" };
+            Assert.AreEqual("png,jpg", attr.Extensions);
+        }
+
+        #endregion
+
+        #region MultilineProperty Tests
+
+        [Test]
+        public void MultilinePropertyAttribute_StoresLines()
+        {
+            var attr = new MultilinePropertyAttribute(5);
+            Assert.AreEqual(5, attr.Lines);
+        }
+
+        [Test]
+        public void MultilinePropertyAttribute_DefaultLines()
+        {
+            var attr = new MultilinePropertyAttribute();
+            Assert.AreEqual(3, attr.Lines);
+        }
+
+        #endregion
+
+        #region AssetOnly / SceneObjectOnly Tests
+
+        [Test]
+        public void AssetOnlyAttribute_IsPropertyAttribute()
+        {
+            var attr = new AssetOnlyAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        [Test]
+        public void SceneObjectOnlyAttribute_IsPropertyAttribute()
+        {
+            var attr = new SceneObjectOnlyAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        #endregion
+
+        #region SearchableEnum Tests
+
+        [Test]
+        public void SearchableEnumAttribute_IsPropertyAttribute()
+        {
+            var attr = new SearchableEnumAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        #endregion
+
+        #region SceneField Tests
+
+        [Test]
+        public void SceneFieldAttribute_IsPropertyAttribute()
+        {
+            var attr = new SceneFieldAttribute();
+            Assert.IsInstanceOf<UnityEngine.PropertyAttribute>(attr);
+        }
+
+        #endregion
+
+        #region ColorPalette Tests
+
+        [Test]
+        public void ColorPaletteAttribute_NamedPalette()
+        {
+            var attr = new ColorPaletteAttribute("Pastel");
+            Assert.AreEqual("Pastel", attr.PaletteName);
+            Assert.IsNull(attr.CustomColors);
+        }
+
+        [Test]
+        public void ColorPaletteAttribute_CustomColors()
+        {
+            var attr = new ColorPaletteAttribute("#FF0000", "#00FF00");
+            Assert.IsNull(attr.PaletteName);
+            Assert.AreEqual(2, attr.CustomColors.Length);
+        }
+
+        [Test]
+        public void ColorPaletteAttribute_DefaultPalette()
+        {
+            var attr = new ColorPaletteAttribute();
+            Assert.AreEqual("Vivid", attr.PaletteName);
+        }
+
+        #endregion
+
+        #region Conditional BoxGroup Tests
+
+        [Test]
+        public void BoxGroupAttribute_ShowIf_DefaultNull()
+        {
+            var attr = new BoxGroupAttribute("Test");
+            Assert.IsNull(attr.ShowIf);
+        }
+
+        [Test]
+        public void BoxGroupAttribute_ShowIf_CanBeSet()
+        {
+            var attr = new BoxGroupAttribute("Test") { ShowIf = "isVisible" };
+            Assert.AreEqual("isVisible", attr.ShowIf);
+        }
+
+        #endregion
+
+        #region ListDrawerSettings Tests
+
+        [Test]
+        public void ListDrawerSettingsAttribute_DefaultValues()
+        {
+            var attr = new ListDrawerSettingsAttribute();
+            Assert.IsTrue(attr.ShowAddRemoveButtons);
+            Assert.IsTrue(attr.Draggable);
+            Assert.IsTrue(attr.ShowCount);
+            Assert.AreEqual(0, attr.MinCount);
+            Assert.AreEqual(0, attr.MaxCount);
+            Assert.IsNull(attr.ElementLabel);
+        }
+
+        [Test]
+        public void ListDrawerSettingsAttribute_CustomValues()
+        {
+            var attr = new ListDrawerSettingsAttribute
+            {
+                MinCount = 1, MaxCount = 10, ElementLabel = "Item $index",
+                Draggable = false, ShowAddRemoveButtons = false
+            };
+            Assert.AreEqual(1, attr.MinCount);
+            Assert.AreEqual(10, attr.MaxCount);
+            Assert.AreEqual("Item $index", attr.ElementLabel);
+            Assert.IsFalse(attr.Draggable);
+        }
+
+        #endregion
+
+        #region OnInspectorInit / Dispose Tests
+
+        [Test]
+        public void OnInspectorInitAttribute_TargetsMethods()
+        {
+            var usage = typeof(OnInspectorInitAttribute).GetCustomAttribute<AttributeUsageAttribute>();
+            Assert.IsNotNull(usage);
+            Assert.AreEqual(AttributeTargets.Method, usage.ValidOn);
+        }
+
+        [Test]
+        public void OnInspectorDisposeAttribute_TargetsMethods()
+        {
+            var usage = typeof(OnInspectorDisposeAttribute).GetCustomAttribute<AttributeUsageAttribute>();
+            Assert.IsNotNull(usage);
+            Assert.AreEqual(AttributeTargets.Method, usage.ValidOn);
+        }
+
+        #endregion
+
         #region SerializedDictionary Tests
 
         [Test]
