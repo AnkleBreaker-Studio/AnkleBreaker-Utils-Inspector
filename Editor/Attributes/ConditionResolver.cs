@@ -14,24 +14,58 @@ namespace AnkleBreaker.Utils.Inspector.Editor
     {
         private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 
+        private static FieldInfo FindField(Type type, string name)
+        {
+            while (type != null)
+            {
+                FieldInfo f = type.GetField(name, Flags);
+                if (f != null) return f;
+                type = type.BaseType;
+            }
+            return null;
+        }
+
+        private static PropertyInfo FindProperty(Type type, string name)
+        {
+            while (type != null)
+            {
+                PropertyInfo p = type.GetProperty(name, Flags);
+                if (p != null) return p;
+                type = type.BaseType;
+            }
+            return null;
+        }
+
+        private static MethodInfo FindMethod(Type type, string name)
+        {
+            while (type != null)
+            {
+                MethodInfo m = type.GetMethod(name, Flags);
+                if (m != null) return m;
+                type = type.BaseType;
+            }
+            return null;
+        }
+
         /// <summary>
         /// Evaluates a named boolean condition on the target object of a SerializedProperty.
         /// Looks for a field, property, or parameterless method returning bool.
+        /// Walks the full type hierarchy (base classes included).
         /// </summary>
         public static bool Evaluate(SerializedProperty property, string conditionName, bool fallback = false)
         {
             object targetObject = property.serializedObject.targetObject;
             Type targetType = targetObject.GetType();
 
-            FieldInfo field = targetType.GetField(conditionName, Flags);
+            FieldInfo field = FindField(targetType, conditionName);
             if (field != null && field.FieldType == typeof(bool))
                 return (bool)field.GetValue(targetObject);
 
-            PropertyInfo prop = targetType.GetProperty(conditionName, Flags);
+            PropertyInfo prop = FindProperty(targetType, conditionName);
             if (prop != null && prop.PropertyType == typeof(bool))
                 return (bool)prop.GetValue(targetObject);
 
-            MethodInfo method = targetType.GetMethod(conditionName, Flags);
+            MethodInfo method = FindMethod(targetType, conditionName);
             if (method != null && method.ReturnType == typeof(bool) && method.GetParameters().Length == 0)
                 return (bool)method.Invoke(targetObject, null);
 
@@ -43,6 +77,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         /// <summary>
         /// Evaluates whether a named field/property equals the given compare value.
         /// Supports enums (compared as int), ints, and strings.
+        /// Walks the full type hierarchy (base classes included).
         /// </summary>
         public static bool EvaluateComparison(SerializedProperty property, string fieldName, object compareValue, bool fallback = false)
         {
@@ -50,12 +85,12 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             Type targetType = targetObject.GetType();
 
             // Try field
-            FieldInfo field = targetType.GetField(fieldName, Flags);
+            FieldInfo field = FindField(targetType, fieldName);
             if (field != null)
                 return CompareValues(field.GetValue(targetObject), compareValue);
 
             // Try property
-            PropertyInfo prop = targetType.GetProperty(fieldName, Flags);
+            PropertyInfo prop = FindProperty(targetType, fieldName);
             if (prop != null)
                 return CompareValues(prop.GetValue(targetObject), compareValue);
 
