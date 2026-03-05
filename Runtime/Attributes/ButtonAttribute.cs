@@ -35,5 +35,10 @@ namespace AnkleBreaker.Utils.Inspector
         /// Defaults to <see cref="ButtonMode.AlwaysEnabled"/>.
         /// </summary>
         public ButtonMode Mode { get; set; } = ButtonMode.AlwaysEnabled;
+
+        /// <summary>
+        /// Optional group name. Buttons sharing the same HorizontalGroup are drawn side by side.
+        /// </summary>
+        public string HorizontalGroup { get; set; }
     }
 }
