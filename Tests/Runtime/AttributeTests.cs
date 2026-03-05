@@ -251,6 +251,23 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         {
             var attr = new SectionHeaderAttribute("My Section");
             Assert.AreEqual("My Section", attr.Title);
+            Assert.AreEqual(SectionHeaderStyle.Line, attr.Style);
+        }
+
+        [Test]
+        public void SectionHeaderAttribute_CustomStyle()
+        {
+            var attr = new SectionHeaderAttribute("Title", SectionHeaderStyle.Box);
+            Assert.AreEqual(SectionHeaderStyle.Box, attr.Style);
+        }
+
+        [Test]
+        public void SectionHeaderAttribute_AllStyles()
+        {
+            Assert.AreEqual(SectionHeaderStyle.Line, new SectionHeaderAttribute("A").Style);
+            Assert.AreEqual(SectionHeaderStyle.CenterLine, new SectionHeaderAttribute("B", SectionHeaderStyle.CenterLine).Style);
+            Assert.AreEqual(SectionHeaderStyle.Box, new SectionHeaderAttribute("C", SectionHeaderStyle.Box).Style);
+            Assert.AreEqual(SectionHeaderStyle.Clean, new SectionHeaderAttribute("D", SectionHeaderStyle.Clean).Style);
         }
 
         #endregion
@@ -262,6 +279,14 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         {
             var attr = new BoxGroupAttribute("Settings");
             Assert.AreEqual("Settings", attr.GroupName);
+            Assert.IsFalse(attr.Foldable);
+        }
+
+        [Test]
+        public void BoxGroupAttribute_Foldable()
+        {
+            var attr = new BoxGroupAttribute("Settings", foldable: true);
+            Assert.IsTrue(attr.Foldable);
         }
 
         #endregion
@@ -786,6 +811,21 @@ namespace AnkleBreaker.Utils.Inspector.Tests
             var attr = new ToggleButtonAttribute("ON", "OFF");
             Assert.AreEqual("ON", attr.TrueLabel);
             Assert.AreEqual("OFF", attr.FalseLabel);
+        }
+
+        [Test]
+        public void ToggleButtonAttribute_BigParam()
+        {
+            var attr = new ToggleButtonAttribute(big: true);
+            Assert.IsTrue(attr.Big);
+            Assert.IsTrue(attr.FullWidth);
+        }
+
+        [Test]
+        public void ToggleButtonAttribute_DefaultNotBig()
+        {
+            var attr = new ToggleButtonAttribute();
+            Assert.IsFalse(attr.Big);
         }
 
         [Test]
