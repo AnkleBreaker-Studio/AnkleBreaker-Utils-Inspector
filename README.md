@@ -36,8 +36,8 @@ https://github.com/AnkleBreaker-Studio/utils-inspector.git#Release
 | `[HorizontalGroup("name", 0.5f)]` | Horizontal with custom width ratio |
 | `[PropertyOrder(n)]` | Controls field display order |
 | `[PropertySpace(before, after)]` | Adds spacing around a field |
-| `[SectionHeader("title")]` | Draws a section header (Line style) |
-| `[SectionHeader("title", SectionHeaderStyle.CenterLine)]` | Centered title between lines |
+| `[SectionHeader("title")]` | Draws a section header (CenterLine style, default) |
+| `[SectionHeader("title", SectionHeaderStyle.Line)]` | Bold label + thin line below |
 | `[SectionHeader("title", SectionHeaderStyle.Box)]` | Dark box behind title |
 | `[SectionHeader("title", SectionHeaderStyle.Clean)]` | Bold label only, no decoration |
 

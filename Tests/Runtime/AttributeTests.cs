@@ -251,7 +251,7 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         {
             var attr = new SectionHeaderAttribute("My Section");
             Assert.AreEqual("My Section", attr.Title);
-            Assert.AreEqual(SectionHeaderStyle.Line, attr.Style);
+            Assert.AreEqual(SectionHeaderStyle.CenterLine, attr.Style);
         }
 
         [Test]
@@ -264,7 +264,7 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         [Test]
         public void SectionHeaderAttribute_AllStyles()
         {
-            Assert.AreEqual(SectionHeaderStyle.Line, new SectionHeaderAttribute("A").Style);
+            Assert.AreEqual(SectionHeaderStyle.CenterLine, new SectionHeaderAttribute("A").Style);
             Assert.AreEqual(SectionHeaderStyle.CenterLine, new SectionHeaderAttribute("B", SectionHeaderStyle.CenterLine).Style);
             Assert.AreEqual(SectionHeaderStyle.Box, new SectionHeaderAttribute("C", SectionHeaderStyle.Box).Style);
             Assert.AreEqual(SectionHeaderStyle.Clean, new SectionHeaderAttribute("D", SectionHeaderStyle.Clean).Style);

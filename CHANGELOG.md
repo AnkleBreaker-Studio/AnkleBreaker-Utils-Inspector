@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0] - 2026-03-05
+
+### Added
+- SectionHeader optional custom color parameter (`[SectionHeader("Title", 1f, 0.3f, 0.3f)]`)
+- SectionHeader color support for all styles (text + lines/borders)
+- GUIColor `Color` property for convenient access
+
+### Changed
+- SectionHeader default style changed to CenterLine
+- SectionHeader Box style now has full 4-sided borders (top, bottom, left, right)
+- SectionHeader font size increased to 13px (matches BoxGroup)
+- FolderPath now opens native OS folder browser dialog
+- FolderPath supports AbsolutePath and RequireExistingPath parameters
+
 ## [1.3.0] - 2026-03-05
 
 ### Added
