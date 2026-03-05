@@ -11,10 +11,13 @@ namespace AnkleBreaker.Utils.Inspector
     public class BoxGroupAttribute : PropertyAttribute
     {
         public string GroupName { get; private set; }
+        /// <summary>When true, the box can be collapsed with a foldout arrow.</summary>
+        public bool Foldable { get; private set; }
 
-        public BoxGroupAttribute(string groupName)
+        public BoxGroupAttribute(string groupName, bool foldable = false)
         {
             GroupName = groupName;
+            Foldable = foldable;
         }
     }
 }
