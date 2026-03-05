@@ -33,7 +33,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
             GUIStyle buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                fontStyle = property.boolValue ? FontStyle.Bold : FontStyle.Normal
+                fontStyle = property.boolValue ? FontStyle.Bold : FontStyle.Normal,
+                fontSize = toggle.Big ? 14 : GUI.skin.button.fontSize
             };
 
             if (GUI.Button(buttonRect, buttonText, buttonStyle))
@@ -42,6 +43,13 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             }
 
             GUI.backgroundColor = previousColor;
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            ToggleButtonAttribute toggle = (ToggleButtonAttribute)attribute;
+            float baseHeight = base.GetPropertyHeight(property, label);
+            return toggle.Big ? baseHeight * 2f : baseHeight;
         }
     }
 }

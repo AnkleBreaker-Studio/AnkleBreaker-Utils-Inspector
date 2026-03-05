@@ -1,6 +1,6 @@
 # AnkleBreaker Utils - Inspector
 
-Custom inspector attributes and property drawers for Unity Editor.
+Custom inspector attributes and property drawers for Unity Editor. A powerful alternative to Odin Inspector with enhanced features.
 
 ## Installation
 
@@ -11,21 +11,92 @@ https://github.com/AnkleBreaker-Studio/utils-inspector.git#Release
 
 ## Attributes
 
+### Conditional Visibility & Enable
+
 | Attribute | Description |
 |-----------|-------------|
-| `[HideInNormalInspector]` | Hides field in default inspector, visible in custom inspectors |
-| `[ShowIf("field")]` | Shows field conditionally based on a boolean |
-| `[HideIf("field")]` | Hides field conditionally based on a boolean |
-| `[ReadonlyName]` | Makes field read-only in inspector |
-| `[ReadOnlyEnumDrawer]` | Read-only enum flags display |
+| `[ShowIf("field")]` | Shows field conditionally based on a bool, enum value, or method |
+| `[ShowIf("field", value)]` | Shows field when field equals value |
+| `[HideIf("field")]` | Hides field conditionally |
+| `[HideIf("field", value)]` | Hides field when field equals value |
+| `[EnableIf("field")]` | Enables/disables field based on condition |
+| `[EnableIf("field", value)]` | Enables field when field equals value |
+| `[DisableInPlayMode]` | Disables field during play mode |
+| `[DisableInEditorMode]` | Disables field in editor mode |
+
+### Layout & Grouping
+
+| Attribute | Description |
+|-----------|-------------|
+| `[BoxGroup("name")]` | Groups fields in a labeled box |
+| `[BoxGroup("name", foldable: true)]` | Foldable box group |
+| `[FoldoutGroup("name")]` | Collapsible foldout group |
+| `[TabGroup("tab")]` | Organizes fields into tabs |
+| `[HorizontalGroup("name")]` | Places fields side by side |
+| `[HorizontalGroup("name", 0.5f)]` | Horizontal with custom width ratio |
+| `[PropertyOrder(n)]` | Controls field display order |
+| `[PropertySpace(before, after)]` | Adds spacing around a field |
+| `[SectionHeader("title")]` | Draws a section header (Line style) |
+| `[SectionHeader("title", SectionHeaderStyle.CenterLine)]` | Centered title between lines |
+| `[SectionHeader("title", SectionHeaderStyle.Box)]` | Dark box behind title |
+| `[SectionHeader("title", SectionHeaderStyle.Clean)]` | Bold label only, no decoration |
+
+### Field Display
+
+| Attribute | Description |
+|-----------|-------------|
+| `[ReadOnly]` | Makes field read-only in inspector |
 | `[LabelText("text")]` | Custom label for inspector field |
 | `[HideVariableName]` | Hides the variable name in inspector |
-| `[HelpBox("msg", type)]` | Displays a help box in inspector |
+| `[HideInNormalInspector]` | Hides field in default inspector |
+| `[SuffixLabel("unit")]` | Appends unit text after field (ms, px, %, etc.) |
+| `[GUIColor(r, g, b)]` | Tints the field with a color |
 | `[FolderPath]` | Folder picker with browse button |
-| `[EnumDescription]` | Enum with description tooltips |
-| `[AutoCompleteText]` | Text field with autocomplete suggestions |
-| `[ABToolTip("tip")]` | Enhanced tooltip attribute |
-| `[Button]` | Displays a method as a button in inspector |
+| `[FreeRange(min, max)]` | Slider that allows values outside range |
+
+### Buttons & Toggles
+
+| Attribute | Description |
+|-----------|-------------|
+| `[Button]` | Displays a method as a clickable button |
+| `[Button("Label")]` | Button with custom label |
+| `[Button(Mode = ButtonMode.EnabledInPlayMode)]` | Play-mode-only button |
+| `[ToggleButton]` | Boolean displayed as a colored toggle button |
+| `[ToggleButton("On", "Off")]` | Toggle with custom labels |
+| `[ToggleButton(big: true)]` | Double-height toggle button |
+| `[InlineButton("method", "label")]` | Small button next to a field |
+| `[EnumToggleButtons]` | Enum displayed as toggle button toolbar |
+
+### Validation & Info
+
+| Attribute | Description |
+|-----------|-------------|
+| `[Required]` | Marks a reference field as required |
+| `[Required("message")]` | Required with custom warning message |
+| `[ValidateInput("method", "msg")]` | Custom validation with error/warning |
+| `[HelpBox("msg", type)]` | Displays a help box above the field |
+| `[InfoBox("msg")]` | Informational message box |
+| `[ABToolTip("method")]` | Dynamic tooltip from a method |
+
+### Data & Input
+
+| Attribute | Description |
+|-----------|-------------|
+| `[ValueDropdown("member")]` | Dropdown from a list field or method |
+| `[OnValueChanged("method")]` | Calls a method when value changes |
+| `[MinMaxSlider(min, max)]` | Range slider for Vector2 fields |
+| `[ProgressBar(min, max)]` | Displays float as a colored progress bar |
+| `[AutoCompleteText(keys)]` | Text field with autocomplete suggestions |
+
+### Preview & Advanced
+
+| Attribute | Description |
+|-----------|-------------|
+| `[PreviewField]` | Asset preview with metadata (dimensions, file size, path) |
+| `[PreviewField(80)]` | Custom preview size. Supports Texture2D, Sprite, Mesh, GameObject |
+| `[InlineEditor]` | Draws ScriptableObject fields inline |
+| `[TableList]` | Draws list as a sortable table |
+| `[ShowInInspector]` | Shows non-serialized fields/properties (read-only) |
 
 ## Serialized Classes
 
@@ -33,6 +104,7 @@ https://github.com/AnkleBreaker-Studio/utils-inspector.git#Release
 
 ## Editor Utilities
 
+- `ABGroupedEditor` — Base editor class handling all grouping, conditional visibility, and layout
 - `ABEditor` — Base editor class with utility methods
 
 ## Requirements

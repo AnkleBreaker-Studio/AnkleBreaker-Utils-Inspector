@@ -64,6 +64,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         {
             public SerializedProperty Property;
             public string BoxGroup;
+            public bool BoxFoldable;
             public string FoldoutGroup;
             public string TabGroup;
             public string HorizontalGroup;
@@ -78,6 +79,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
             // SectionHeader (handled at editor level to avoid conflict with HorizontalGroup)
             public string SectionHeaderTitle;
+            public SectionHeaderStyle SectionHeaderStyle;
         }
 
         private List<PropertyEntry> CollectPropertyEntries()
@@ -102,7 +104,11 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 if (field != null)
                 {
                     var boxGroup = field.GetCustomAttribute<BoxGroupAttribute>();
-                    if (boxGroup != null) entry.BoxGroup = boxGroup.GroupName;
+                    if (boxGroup != null)
+                    {
+                        entry.BoxGroup = boxGroup.GroupName;
+                        entry.BoxFoldable = boxGroup.Foldable;
+                    }
 
                     var foldoutGroup = field.GetCustomAttribute<FoldoutGroupAttribute>();
                     if (foldoutGroup != null) entry.FoldoutGroup = foldoutGroup.GroupName;
@@ -127,7 +133,11 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
                     // SectionHeader (drawn at editor level to avoid conflict with HorizontalGroup)
                     var sectionHeader = field.GetCustomAttribute<SectionHeaderAttribute>();
-                    if (sectionHeader != null) entry.SectionHeaderTitle = sectionHeader.Title;
+                    if (sectionHeader != null)
+                    {
+                        entry.SectionHeaderTitle = sectionHeader.Title;
+                        entry.SectionHeaderStyle = sectionHeader.Style;
+                    }
                 }
 
                 entry.OriginalIndex = entries.Count;
@@ -195,8 +205,16 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 if (entry.BoxGroup != currentBox)
                 {
                     if (currentBox != null) EndBox();
-                    if (entry.BoxGroup != null) BeginBox(entry.BoxGroup);
+                    if (entry.BoxGroup != null) BeginBox(entry.BoxGroup, entry.BoxFoldable);
                     currentBox = entry.BoxGroup;
+                }
+
+                // Skip box content if foldable box is collapsed
+                if (currentBox != null)
+                {
+                    string boxKey = target.GetType().FullName + "_box_" + currentBox;
+                    if (FoldoutStates.ContainsKey(boxKey) && !FoldoutStates[boxKey])
+                        continue;
                 }
 
                 // Foldout Group transitions
@@ -234,7 +252,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 {
                     // Close existing horizontal if any, draw header outside, then let transition reopen
                     if (currentHoriz != null) { EndHorizontal(); currentHoriz = null; }
-                    SectionHeaderDrawer.DrawManualSectionHeader(entry.SectionHeaderTitle);
+                    SectionHeaderDrawer.DrawManualSectionHeader(entry.SectionHeaderTitle, entry.SectionHeaderStyle);
                     SectionHeaderDrawer.SuppressNextDraw = true;
                 }
 
@@ -301,13 +319,55 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
         #region Group Helpers
 
-        private void BeginBox(string title)
+        private static GUIStyle _boxTitleStyle;
+        private static GUIStyle BoxTitleStyle
+        {
+            get
+            {
+                if (_boxTitleStyle == null)
+                {
+                    _boxTitleStyle = new GUIStyle(EditorStyles.boldLabel)
+                    {
+                        fontSize = 13
+                    };
+                }
+                return _boxTitleStyle;
+            }
+        }
+
+        private static GUIStyle _boxFoldoutStyle;
+        private static GUIStyle BoxFoldoutStyle
+        {
+            get
+            {
+                if (_boxFoldoutStyle == null)
+                {
+                    _boxFoldoutStyle = new GUIStyle(EditorStyles.foldout)
+                    {
+                        fontStyle = FontStyle.Bold,
+                        fontSize = 13
+                    };
+                }
+                return _boxFoldoutStyle;
+            }
+        }
+
+        private void BeginBox(string title, bool foldable = false)
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             if (!string.IsNullOrEmpty(title))
             {
-                EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
-                DrawSeparator();
+                if (foldable)
+                {
+                    string key = target.GetType().FullName + "_box_" + title;
+                    if (!FoldoutStates.ContainsKey(key)) FoldoutStates[key] = true;
+                    FoldoutStates[key] = EditorGUILayout.Foldout(FoldoutStates[key], title, true, BoxFoldoutStyle);
+                }
+                else
+                {
+                    EditorGUILayout.LabelField(title, BoxTitleStyle);
+                    DrawSeparator();
+                }
             }
         }
 

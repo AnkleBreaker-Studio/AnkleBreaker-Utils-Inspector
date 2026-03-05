@@ -30,11 +30,15 @@ namespace AnkleBreaker.Utils.Inspector
         /// <summary>If true (default), the button takes the full line. If false, shows label + smaller button.</summary>
         public bool FullWidth { get; private set; }
 
-        public ToggleButtonAttribute(string trueLabel = null, string falseLabel = null, bool fullWidth = true)
+        /// <summary>If true, the button height is doubled for a bigger visual presence.</summary>
+        public bool Big { get; private set; }
+
+        public ToggleButtonAttribute(string trueLabel = null, string falseLabel = null, bool fullWidth = true, bool big = false)
         {
             TrueLabel = trueLabel;
             FalseLabel = falseLabel;
             FullWidth = fullWidth;
+            Big = big;
         }
     }
 }
