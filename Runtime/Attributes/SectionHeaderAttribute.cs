@@ -24,11 +24,31 @@ namespace AnkleBreaker.Utils.Inspector
     {
         public string Title { get; private set; }
         public SectionHeaderStyle Style { get; private set; }
+        public bool HasCustomColor { get; private set; }
+        public float R { get; private set; }
+        public float G { get; private set; }
+        public float B { get; private set; }
 
-        public SectionHeaderAttribute(string title, SectionHeaderStyle style = SectionHeaderStyle.Line)
+        public SectionHeaderAttribute(string title, SectionHeaderStyle style = SectionHeaderStyle.CenterLine)
         {
             Title = title;
             Style = style;
+        }
+
+        public SectionHeaderAttribute(string title, float r, float g, float b)
+        {
+            Title = title;
+            Style = SectionHeaderStyle.CenterLine;
+            HasCustomColor = true;
+            R = r; G = g; B = b;
+        }
+
+        public SectionHeaderAttribute(string title, SectionHeaderStyle style, float r, float g, float b)
+        {
+            Title = title;
+            Style = style;
+            HasCustomColor = true;
+            R = r; G = g; B = b;
         }
     }
 }

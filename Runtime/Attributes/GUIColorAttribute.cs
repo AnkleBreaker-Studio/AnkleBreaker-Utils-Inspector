@@ -14,6 +14,8 @@ namespace AnkleBreaker.Utils.Inspector
         public float B { get; private set; }
         public float A { get; private set; }
 
+        public Color Color => new Color(R, G, B, A);
+
         public GUIColorAttribute(float r, float g, float b, float a = 1f)
         {
             R = r;

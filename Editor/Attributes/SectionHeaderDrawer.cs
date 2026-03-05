@@ -30,18 +30,24 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             }
         }
 
+        private static readonly Color DefaultLine = EditorGUIUtility.isProSkin
+            ? new Color(0.4f, 0.4f, 0.4f) : new Color(0.6f, 0.6f, 0.6f);
+
         public override void OnGUI(Rect position)
         {
             if (SuppressNextDraw) { SuppressNextDraw = false; return; }
-            DrawRect(position, Attr.Title, Attr.Style);
+            Color? customColor = Attr.HasCustomColor ? new Color(Attr.R, Attr.G, Attr.B) : (Color?)null;
+            DrawRect(position, Attr.Title, Attr.Style, customColor);
         }
 
         /// <summary>Rect-based draw used by both the DecoratorDrawer and manual layout path.</summary>
-        internal static void DrawRect(Rect position, string title, SectionHeaderStyle style)
+        internal static void DrawRect(Rect position, string title, SectionHeaderStyle style, Color? customColor = null)
         {
             position.y += TopPadding;
-            Color line = EditorGUIUtility.isProSkin ? new Color(0.4f, 0.4f, 0.4f) : new Color(0.6f, 0.6f, 0.6f);
-            GUIStyle bold = new GUIStyle(EditorStyles.boldLabel) { fontSize = 12 };
+            Color line = customColor ?? DefaultLine;
+            GUIStyle bold = new GUIStyle(EditorStyles.boldLabel) { fontSize = 13 };
+            if (customColor.HasValue)
+                bold.normal.textColor = customColor.Value;
 
             switch (style)
             {
@@ -64,31 +70,44 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     break;
 
                 case SectionHeaderStyle.Box:
-                    Color bg = EditorGUIUtility.isProSkin ? new Color(0.22f, 0.22f, 0.22f) : new Color(0.82f, 0.82f, 0.82f);
+                    Color bg = customColor.HasValue
+                        ? new Color(customColor.Value.r * 0.3f, customColor.Value.g * 0.3f, customColor.Value.b * 0.3f, 0.5f)
+                        : (EditorGUIUtility.isProSkin ? new Color(0.18f, 0.18f, 0.18f) : new Color(0.82f, 0.82f, 0.82f));
                     float boxH = LabelHeight + BoxPadding * 2;
+                    float bw = 2f; // border width
+
+                    // Full background fill
                     EditorGUI.DrawRect(new Rect(position.x, position.y, position.width, boxH), bg);
-                    EditorGUI.DrawRect(new Rect(position.x, position.y, position.width, LineThickness), line);
-                    EditorGUI.DrawRect(new Rect(position.x, position.y + boxH - LineThickness, position.width, LineThickness), line);
+                    // Top border
+                    EditorGUI.DrawRect(new Rect(position.x, position.y, position.width, bw), line);
+                    // Bottom border
+                    EditorGUI.DrawRect(new Rect(position.x, position.y + boxH - bw, position.width, bw), line);
+                    // Left border
+                    EditorGUI.DrawRect(new Rect(position.x, position.y, bw, boxH), line);
+                    // Right border
+                    EditorGUI.DrawRect(new Rect(position.x + position.width - bw, position.y, bw, boxH), line);
+
                     GUIStyle boxLabel = new GUIStyle(bold) { alignment = TextAnchor.MiddleCenter };
+                    if (customColor.HasValue)
+                        boxLabel.normal.textColor = customColor.Value;
                     EditorGUI.LabelField(new Rect(position.x, position.y + BoxPadding, position.width, LabelHeight), title, boxLabel);
                     break;
 
                 case SectionHeaderStyle.Clean:
-                    GUIStyle cleanStyle = new GUIStyle(bold) { fontSize = 13 };
-                    EditorGUI.LabelField(new Rect(position.x, position.y, position.width, LabelHeight), title, cleanStyle);
+                    EditorGUI.LabelField(new Rect(position.x, position.y, position.width, LabelHeight), title, bold);
                     break;
             }
         }
 
         /// <summary>Layout-based draw for ABGroupedEditor manual path.</summary>
-        internal static void DrawManualSectionHeader(string title, SectionHeaderStyle style = SectionHeaderStyle.Line)
+        internal static void DrawManualSectionHeader(string title, SectionHeaderStyle style = SectionHeaderStyle.CenterLine, Color? customColor = null)
         {
             float h = TopPadding + LabelHeight + BottomPadding;
             if (style == SectionHeaderStyle.Box) h = TopPadding + BoxPadding * 2 + LabelHeight + BottomPadding;
             else if (style != SectionHeaderStyle.Clean) h = TopPadding + LabelHeight + LineThickness + BottomPadding;
 
             Rect rect = EditorGUILayout.GetControlRect(false, h);
-            DrawRect(rect, title, style);
+            DrawRect(rect, title, style, customColor);
         }
     }
 }

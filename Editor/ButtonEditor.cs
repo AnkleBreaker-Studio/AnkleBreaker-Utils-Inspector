@@ -80,6 +80,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             // SectionHeader (handled at editor level to avoid conflict with HorizontalGroup)
             public string SectionHeaderTitle;
             public SectionHeaderStyle SectionHeaderStyle;
+            public Color? SectionHeaderColor;
         }
 
         private List<PropertyEntry> CollectPropertyEntries()
@@ -137,6 +138,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     {
                         entry.SectionHeaderTitle = sectionHeader.Title;
                         entry.SectionHeaderStyle = sectionHeader.Style;
+                        if (sectionHeader.HasCustomColor)
+                            entry.SectionHeaderColor = new Color(sectionHeader.R, sectionHeader.G, sectionHeader.B);
                     }
                 }
 
@@ -252,7 +255,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 {
                     // Close existing horizontal if any, draw header outside, then let transition reopen
                     if (currentHoriz != null) { EndHorizontal(); currentHoriz = null; }
-                    SectionHeaderDrawer.DrawManualSectionHeader(entry.SectionHeaderTitle, entry.SectionHeaderStyle);
+                    SectionHeaderDrawer.DrawManualSectionHeader(entry.SectionHeaderTitle, entry.SectionHeaderStyle, entry.SectionHeaderColor);
                     SectionHeaderDrawer.SuppressNextDraw = true;
                 }
 
