@@ -428,6 +428,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             public string Name;
             public Func<object> Getter;
             public Type ValueType;
+            public bool RuntimeOnly;
         }
 
         private static List<ShowInInspectorEntry> CollectShowInInspector(UnityEngine.Object target)
@@ -440,14 +441,16 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             // Fields
             foreach (var field in type.GetFields(MemberFlags))
             {
-                if (field.GetCustomAttribute<ShowInInspectorAttribute>() != null)
+                var attr = field.GetCustomAttribute<ShowInInspectorAttribute>();
+                if (attr != null)
                 {
                     var f = field;
                     entries.Add(new ShowInInspectorEntry
                     {
                         Name = ObjectNames.NicifyVariableName(f.Name),
                         Getter = () => f.GetValue(target),
-                        ValueType = f.FieldType
+                        ValueType = f.FieldType,
+                        RuntimeOnly = attr.RuntimeOnly
                     });
                 }
             }
@@ -455,14 +458,16 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             // Properties
             foreach (var prop in type.GetProperties(MemberFlags))
             {
-                if (prop.GetCustomAttribute<ShowInInspectorAttribute>() != null && prop.CanRead)
+                var attr = prop.GetCustomAttribute<ShowInInspectorAttribute>();
+                if (attr != null && prop.CanRead)
                 {
                     var p = prop;
                     entries.Add(new ShowInInspectorEntry
                     {
                         Name = ObjectNames.NicifyVariableName(p.Name),
                         Getter = () => p.GetValue(target),
-                        ValueType = p.PropertyType
+                        ValueType = p.PropertyType,
+                        RuntimeOnly = attr.RuntimeOnly
                     });
                 }
             }
@@ -482,6 +487,9 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
             foreach (var entry in _showInInspectorEntries)
             {
+                if (entry.RuntimeOnly && !Application.isPlaying)
+                    continue;
+
                 try
                 {
                     object value = entry.Getter();
@@ -536,8 +544,19 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
             EditorGUILayout.Space(4);
 
-            foreach (var button in buttons)
+            string currentGroup = null;
+            for (int i = 0; i < buttons.Count; i++)
             {
+                var button = buttons[i];
+                string group = button.Attribute.HorizontalGroup;
+
+                // Begin horizontal group
+                if (group != null && group != currentGroup)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    currentGroup = group;
+                }
+
                 bool isEnabled = IsButtonEnabled(button.Attribute.Mode);
                 EditorGUI.BeginDisabledGroup(!isEnabled);
 
@@ -548,6 +567,18 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 }
 
                 EditorGUI.EndDisabledGroup();
+
+                // End horizontal group if next button is different group or last button
+                bool endGroup = currentGroup != null;
+                if (endGroup)
+                {
+                    string nextGroup = (i + 1 < buttons.Count) ? buttons[i + 1].Attribute.HorizontalGroup : null;
+                    if (nextGroup != currentGroup)
+                    {
+                        EditorGUILayout.EndHorizontal();
+                        currentGroup = null;
+                    }
+                }
             }
         }
 

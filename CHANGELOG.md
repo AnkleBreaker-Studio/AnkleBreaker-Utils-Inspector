@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0] - 2026-03-05
+
+### Added
+- `[Button(HorizontalGroup = "name")]` — buttons sharing the same group are drawn side by side
+- `[ShowInInspector(runtimeOnly: true)]` — hides the entry in Editor mode, visible only in Play mode
+- ConditionResolver now walks the full type hierarchy (fixes warnings for inherited fields)
+
 ## [1.4.0] - 2026-03-05
 
 ### Added

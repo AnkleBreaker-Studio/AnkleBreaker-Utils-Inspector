@@ -94,6 +94,20 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         }
 
         [Test]
+        public void ButtonAttribute_HorizontalGroup_DefaultNull()
+        {
+            var attr = new ButtonAttribute();
+            Assert.IsNull(attr.HorizontalGroup);
+        }
+
+        [Test]
+        public void ButtonAttribute_HorizontalGroup_CanBeSet()
+        {
+            var attr = new ButtonAttribute { HorizontalGroup = "Actions" };
+            Assert.AreEqual("Actions", attr.HorizontalGroup);
+        }
+
+        [Test]
         public void ButtonAttribute_TargetsMethodsOnly()
         {
             var usage = typeof(ButtonAttribute).GetCustomAttribute<AttributeUsageAttribute>();
@@ -528,6 +542,20 @@ namespace AnkleBreaker.Utils.Inspector.Tests
             Assert.IsNotNull(usage);
             Assert.IsTrue((usage.ValidOn & AttributeTargets.Field) != 0);
             Assert.IsTrue((usage.ValidOn & AttributeTargets.Property) != 0);
+        }
+
+        [Test]
+        public void ShowInInspectorAttribute_RuntimeOnly_DefaultFalse()
+        {
+            var attr = new ShowInInspectorAttribute();
+            Assert.IsFalse(attr.RuntimeOnly);
+        }
+
+        [Test]
+        public void ShowInInspectorAttribute_RuntimeOnly_True()
+        {
+            var attr = new ShowInInspectorAttribute(runtimeOnly: true);
+            Assert.IsTrue(attr.RuntimeOnly);
         }
 
         #endregion
