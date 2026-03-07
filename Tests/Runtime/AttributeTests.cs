@@ -1069,6 +1069,41 @@ namespace AnkleBreaker.Utils.Inspector.Tests
 
         #endregion
 
+        #region InlineButton Tests
+
+        [Test]
+        public void InlineButtonAttribute_StoresMethodName()
+        {
+            var attr = new InlineButtonAttribute("DoSomething");
+            Assert.AreEqual("DoSomething", attr.MethodName);
+            Assert.IsNull(attr.Label);
+            Assert.AreEqual(ButtonMode.AlwaysEnabled, attr.Mode);
+        }
+
+        [Test]
+        public void InlineButtonAttribute_StoresCustomLabel()
+        {
+            var attr = new InlineButtonAttribute("Randomize", "↻");
+            Assert.AreEqual("Randomize", attr.MethodName);
+            Assert.AreEqual("↻", attr.Label);
+        }
+
+        [Test]
+        public void InlineButtonAttribute_SupportsButtonMode()
+        {
+            var attr = new InlineButtonAttribute("Test") { Mode = ButtonMode.EnabledInPlayMode };
+            Assert.AreEqual(ButtonMode.EnabledInPlayMode, attr.Mode);
+        }
+
+        [Test]
+        public void InlineButtonAttribute_SupportsCustomWidth()
+        {
+            var attr = new InlineButtonAttribute("Test") { Width = 80f };
+            Assert.AreEqual(80f, attr.Width);
+        }
+
+        #endregion
+
         #region SerializedDictionary Tests
 
         [Test]

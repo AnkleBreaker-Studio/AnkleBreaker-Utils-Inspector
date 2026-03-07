@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.2] - 2026-03-07
+
+### Added
+- `[InlineButton(methodName, label)]` — draws a small button on the same line as a property field, invoking the specified method. Supports `ButtonMode`, custom `Width`, and `AllowMultiple`.
+
 ## [1.6.1] - 2026-03-07
 
 ### Fixed
