@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.6.1] - 2026-03-07
+
+### Fixed
+- `FilePathAttribute.Extensions` changed to read-write property (fixes CS0200/CS0617 compile errors when using named attribute syntax)
+- Added missing constructor overloads `(string, bool)` and `(string, float)` to `ShowIfAttribute`, `HideIfAttribute`, and `EnableIfAttribute`
+- `ConditionResolver.CompareValues` now explicitly handles `bool` and `float` comparisons (float uses epsilon tolerance)
+
+## [1.6.0] - 2026-03-05
+
+### Added
+- **Batch 1 — Simple Attributes:**
+  - `[TagField]` — tag dropdown selector for string fields
+  - `[LayerField]` — layer dropdown selector for int fields
+  - `[Indent(level)]` — adjusts inspector indentation level
+  - `[FilePath(Extensions, AbsolutePath)]` — file browser with extension filter
+  - `[MultilineProperty(lines)]` — multi-line text area with configurable height
+  - `[AssetOnly]` — restricts ObjectField to project assets only
+  - `[SceneObjectOnly]` — restricts ObjectField to scene objects only
+- **Batch 2 — Medium Attributes:**
+  - `[SearchableEnum]` — searchable popup window for large enums
+  - `[SceneField]` — scene asset picker with Build Settings validation
+  - `[ColorPalette("name")]` — color picker with preset swatches (Vivid, Pastel, Greyscale, Warm, Cool, or custom hex)
+  - `[BoxGroup("name", ShowIf = "condition")]` — conditional box group visibility
+- **Batch 3 — Complex Attributes:**
+  - `[ListDrawerSettings]` — customize list rendering (Draggable, ShowCount, MinCount, MaxCount, ElementLabel)
+  - `[Button]` with parameters — methods with editable params displayed above button
+  - `[OnInspectorInit]` — callback when inspector opens (OnEnable)
+  - `[OnInspectorDispose]` — callback when inspector closes (OnDisable)
+
 ## [1.5.0] - 2026-03-05
 
 ### Added

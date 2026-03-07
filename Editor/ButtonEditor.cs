@@ -37,6 +37,25 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         {
             _buttonMethods = ButtonDrawerUtility.CollectButtonMethods(target);
             _showInInspectorEntries = CollectShowInInspector(target);
+            InvokeLifecycleMethods<OnInspectorInitAttribute>(target);
+        }
+
+        private void OnDisable()
+        {
+            InvokeLifecycleMethods<OnInspectorDisposeAttribute>(target);
+        }
+
+        private static void InvokeLifecycleMethods<T>(UnityEngine.Object target) where T : Attribute
+        {
+            if (target == null) return;
+            var methods = target.GetType()
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(m => m.GetCustomAttribute<T>() != null && m.GetParameters().Length == 0);
+            foreach (var method in methods)
+            {
+                try { method.Invoke(target, null); }
+                catch (System.Exception e) { Debug.LogException(e); }
+            }
         }
 
         public override void OnInspectorGUI()
@@ -65,6 +84,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             public SerializedProperty Property;
             public string BoxGroup;
             public bool BoxFoldable;
+            public string BoxShowIf;
             public string FoldoutGroup;
             public string TabGroup;
             public string HorizontalGroup;
@@ -109,6 +129,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     {
                         entry.BoxGroup = boxGroup.GroupName;
                         entry.BoxFoldable = boxGroup.Foldable;
+                        entry.BoxShowIf = boxGroup.ShowIf;
                     }
 
                     var foldoutGroup = field.GetCustomAttribute<FoldoutGroupAttribute>();
@@ -175,6 +196,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         {
             // Group tracking
             string currentBox = null;
+            bool boxHidden = false;
             string currentFoldout = null;
             string currentTab = null;
             string currentHoriz = null;
@@ -207,10 +229,28 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 // Box Group transitions
                 if (entry.BoxGroup != currentBox)
                 {
-                    if (currentBox != null) EndBox();
-                    if (entry.BoxGroup != null) BeginBox(entry.BoxGroup, entry.BoxFoldable);
+                    if (currentBox != null && !boxHidden) EndBox();
+                    boxHidden = false;
+                    if (entry.BoxGroup != null)
+                    {
+                        // Conditional BoxGroup: evaluate ShowIf before drawing
+                        if (!string.IsNullOrEmpty(entry.BoxShowIf))
+                        {
+                            bool boxVisible = ConditionResolver.Evaluate(entry.Property, entry.BoxShowIf, false);
+                            if (!boxVisible)
+                            {
+                                boxHidden = true;
+                                currentBox = entry.BoxGroup;
+                                continue;
+                            }
+                        }
+                        BeginBox(entry.BoxGroup, entry.BoxFoldable);
+                    }
                     currentBox = entry.BoxGroup;
                 }
+
+                // Skip all entries in a hidden conditional BoxGroup
+                if (boxHidden) continue;
 
                 // Skip box content if foldable box is collapsed
                 if (currentBox != null)
@@ -315,7 +355,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             // Close any open groups
             if (currentHoriz != null) EndHorizontal();
             if (currentFoldout != null) EndFoldout();
-            if (currentBox != null) EndBox();
+            if (currentBox != null && !boxHidden) EndBox();
         }
 
         #endregion
@@ -515,6 +555,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         public MethodInfo Method;
         public ButtonAttribute Attribute;
         public string DisplayName;
+        public ParameterInfo[] Parameters;
+        public object[] ParameterValues;
     }
 
     public static class ButtonDrawerUtility
@@ -532,7 +574,13 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             {
                 var attr = method.GetCustomAttribute<ButtonAttribute>();
                 var displayName = string.IsNullOrEmpty(attr.Name) ? FormatMethodName(method.Name) : attr.Name;
-                list.Add(new ButtonMethodInfo { Method = method, Attribute = attr, DisplayName = displayName });
+                var parameters = method.GetParameters();
+                object[] paramValues = new object[parameters.Length];
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    paramValues[i] = parameters[i].HasDefaultValue ? parameters[i].DefaultValue : GetDefaultValue(parameters[i].ParameterType);
+                }
+                list.Add(new ButtonMethodInfo { Method = method, Attribute = attr, DisplayName = displayName, Parameters = parameters, ParameterValues = paramValues });
             }
 
             return list;
@@ -560,11 +608,24 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 bool isEnabled = IsButtonEnabled(button.Attribute.Mode);
                 EditorGUI.BeginDisabledGroup(!isEnabled);
 
+                // Draw parameter fields if method has parameters
+                if (button.Parameters != null && button.Parameters.Length > 0)
+                {
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    for (int p = 0; p < button.Parameters.Length; p++)
+                    {
+                        button.ParameterValues[p] = DrawParameterField(button.Parameters[p], button.ParameterValues[p]);
+                    }
+                }
+
                 if (GUILayout.Button(button.DisplayName))
                 {
                     foreach (var t in targets)
-                        button.Method.Invoke(t, null);
+                        button.Method.Invoke(t, button.Parameters.Length > 0 ? button.ParameterValues : null);
                 }
+
+                if (button.Parameters != null && button.Parameters.Length > 0)
+                    EditorGUILayout.EndVertical();
 
                 EditorGUI.EndDisabledGroup();
 
@@ -590,6 +651,48 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 case ButtonMode.DisabledInPlayMode: return !Application.isPlaying;
                 default: return true;
             }
+        }
+
+        internal static object GetDefaultValue(System.Type type)
+        {
+            if (type == typeof(string)) return "";
+            if (type == typeof(int)) return 0;
+            if (type == typeof(float)) return 0f;
+            if (type == typeof(bool)) return false;
+            if (type == typeof(Vector2)) return Vector2.zero;
+            if (type == typeof(Vector3)) return Vector3.zero;
+            if (type == typeof(Color)) return Color.white;
+            if (type.IsEnum) return System.Activator.CreateInstance(type);
+            if (type.IsValueType) return System.Activator.CreateInstance(type);
+            return null;
+        }
+
+        internal static object DrawParameterField(ParameterInfo param, object currentValue)
+        {
+            string label = ObjectNames.NicifyVariableName(param.Name);
+            System.Type t = param.ParameterType;
+
+            if (t == typeof(int))
+                return EditorGUILayout.IntField(label, (int)(currentValue ?? 0));
+            if (t == typeof(float))
+                return EditorGUILayout.FloatField(label, (float)(currentValue ?? 0f));
+            if (t == typeof(string))
+                return EditorGUILayout.TextField(label, (string)(currentValue ?? ""));
+            if (t == typeof(bool))
+                return EditorGUILayout.Toggle(label, (bool)(currentValue ?? false));
+            if (t == typeof(Vector2))
+                return EditorGUILayout.Vector2Field(label, (Vector2)(currentValue ?? Vector2.zero));
+            if (t == typeof(Vector3))
+                return EditorGUILayout.Vector3Field(label, (Vector3)(currentValue ?? Vector3.zero));
+            if (t == typeof(Color))
+                return EditorGUILayout.ColorField(label, (Color)(currentValue ?? Color.white));
+            if (t.IsEnum)
+                return EditorGUILayout.EnumPopup(label, (System.Enum)(currentValue ?? System.Activator.CreateInstance(t)));
+            if (typeof(UnityEngine.Object).IsAssignableFrom(t))
+                return EditorGUILayout.ObjectField(label, (UnityEngine.Object)currentValue, t, true);
+
+            EditorGUILayout.LabelField(label, $"[Unsupported type: {t.Name}]");
+            return currentValue;
         }
 
         /// <summary>Converts "MyMethodName" to "My Method Name".</summary>
