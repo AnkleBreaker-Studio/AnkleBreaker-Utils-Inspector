@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1] - 2026-03-07
+
+### Fixed
+- `FilePathAttribute.Extensions` changed to read-write property (fixes CS0200/CS0617 compile errors when using named attribute syntax)
+- Added missing constructor overloads `(string, bool)` and `(string, float)` to `ShowIfAttribute`, `HideIfAttribute`, and `EnableIfAttribute`
+- `ConditionResolver.CompareValues` now explicitly handles `bool` and `float` comparisons (float uses epsilon tolerance)
+
 ## [1.6.0] - 2026-03-05
 
 ### Added
