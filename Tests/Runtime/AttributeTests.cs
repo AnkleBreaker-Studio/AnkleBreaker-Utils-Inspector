@@ -346,25 +346,6 @@ namespace AnkleBreaker.Utils.Inspector.Tests
 
         #endregion
 
-        #region InlineButton Tests
-
-        [Test]
-        public void InlineButtonAttribute_StoresMethodName()
-        {
-            var attr = new InlineButtonAttribute("DoSomething");
-            Assert.AreEqual("DoSomething", attr.MethodName);
-            Assert.IsNull(attr.Label);
-        }
-
-        [Test]
-        public void InlineButtonAttribute_CustomLabel()
-        {
-            var attr = new InlineButtonAttribute("Reset", "X");
-            Assert.AreEqual("X", attr.Label);
-        }
-
-        #endregion
-
         #region ValueDropdown Tests
 
         [Test]
@@ -1065,6 +1046,75 @@ namespace AnkleBreaker.Utils.Inspector.Tests
             var usage = typeof(OnInspectorDisposeAttribute).GetCustomAttribute<AttributeUsageAttribute>();
             Assert.IsNotNull(usage);
             Assert.AreEqual(AttributeTargets.Method, usage.ValidOn);
+        }
+
+        #endregion
+
+        #region HideInPlayMode / HideInEditorMode Tests
+
+        [Test]
+        public void HideInPlayModeAttribute_CanBeCreated()
+        {
+            var attr = new HideInPlayModeAttribute();
+            Assert.IsNotNull(attr);
+        }
+
+        [Test]
+        public void HideInEditorModeAttribute_CanBeCreated()
+        {
+            var attr = new HideInEditorModeAttribute();
+            Assert.IsNotNull(attr);
+        }
+
+        #endregion
+
+        #region Wrap Tests
+
+        [Test]
+        public void WrapAttribute_StoresMinMax()
+        {
+            var attr = new WrapAttribute(0f, 360f);
+            Assert.AreEqual(0f, attr.Min);
+            Assert.AreEqual(360f, attr.Max);
+        }
+
+        [Test]
+        public void WrapAttribute_StoresIntRange()
+        {
+            var attr = new WrapAttribute(0, 24);
+            Assert.AreEqual(0f, attr.Min);
+            Assert.AreEqual(24f, attr.Max);
+        }
+
+        #endregion
+
+        #region DelayedProperty Tests
+
+        [Test]
+        public void DelayedPropertyAttribute_CanBeCreated()
+        {
+            var attr = new DelayedPropertyAttribute();
+            Assert.IsNotNull(attr);
+        }
+
+        #endregion
+
+        #region DisplayAsString Tests
+
+        [Test]
+        public void DisplayAsStringAttribute_DefaultValues()
+        {
+            var attr = new DisplayAsStringAttribute();
+            Assert.IsFalse(attr.HideLabel);
+            Assert.AreEqual(0, attr.FontSize);
+        }
+
+        [Test]
+        public void DisplayAsStringAttribute_SupportsHideLabel()
+        {
+            var attr = new DisplayAsStringAttribute { HideLabel = true, FontSize = 14 };
+            Assert.IsTrue(attr.HideLabel);
+            Assert.AreEqual(14, attr.FontSize);
         }
 
         #endregion

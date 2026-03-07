@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.3] - 2026-03-07
+
+### Added
+- `[HideInPlayMode]` — hides a field during Play Mode
+- `[HideInEditorMode]` — hides a field in Editor Mode (only visible during Play Mode)
+- `[Wrap(min, max)]` — cyclic value wrapping for int and float fields (e.g., 0–360 for angles)
+- `[DelayedProperty]` — value only applied on Enter or focus loss (string, int, float)
+- `[DisplayAsString]` — displays field value as read-only label, supports `HideLabel` and `FontSize`
+
 ## [1.6.2] - 2026-03-07
 
 ### Added
