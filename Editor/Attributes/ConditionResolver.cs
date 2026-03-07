@@ -104,6 +104,10 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             if (fieldValue == null && compareValue == null) return true;
             if (fieldValue == null || compareValue == null) return false;
 
+            // Bool comparison
+            if (fieldValue is bool fieldBool && compareValue is bool cmpBool)
+                return fieldBool == cmpBool;
+
             // Enum comparison: compare as int
             if (fieldValue.GetType().IsEnum && compareValue is int intVal)
                 return Convert.ToInt32(fieldValue) == intVal;
@@ -111,6 +115,10 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             // Int comparison
             if (fieldValue is int fieldInt && compareValue is int cmpInt)
                 return fieldInt == cmpInt;
+
+            // Float comparison (with epsilon tolerance)
+            if (fieldValue is float fieldFloat && compareValue is float cmpFloat)
+                return Math.Abs(fieldFloat - cmpFloat) < 0.0001f;
 
             // String comparison
             if (fieldValue is string fieldStr && compareValue is string cmpStr)
