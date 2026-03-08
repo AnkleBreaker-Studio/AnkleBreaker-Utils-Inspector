@@ -86,6 +86,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             public bool BoxFoldable;
             public string BoxShowIf;
             public string FoldoutGroup;
+            public FoldoutGroupStyle FoldoutStyle;
+            public Color? FoldoutColor;
             public string TabGroup;
             public string HorizontalGroup;
             public float HorizontalWidth;
@@ -133,7 +135,13 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     }
 
                     var foldoutGroup = field.GetCustomAttribute<FoldoutGroupAttribute>();
-                    if (foldoutGroup != null) entry.FoldoutGroup = foldoutGroup.GroupName;
+                    if (foldoutGroup != null)
+                    {
+                        entry.FoldoutGroup = foldoutGroup.GroupName;
+                        entry.FoldoutStyle = foldoutGroup.Style;
+                        if (foldoutGroup.HasCustomColor)
+                            entry.FoldoutColor = new Color(foldoutGroup.R, foldoutGroup.G, foldoutGroup.B);
+                    }
 
                     var tabGroup = field.GetCustomAttribute<TabGroupAttribute>();
                     if (tabGroup != null) entry.TabGroup = tabGroup.TabName;
@@ -266,7 +274,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     if (currentFoldout != null) EndFoldout();
                     if (entry.FoldoutGroup != null)
                     {
-                        if (!BeginFoldout(entry.FoldoutGroup))
+                        if (!BeginFoldout(entry.FoldoutGroup, entry.FoldoutStyle, entry.FoldoutColor))
                         {
                             currentFoldout = entry.FoldoutGroup;
                             // Skip all entries in this foldout
@@ -420,12 +428,74 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             EditorGUILayout.Space(2);
         }
 
-        private bool BeginFoldout(string title)
+        private FoldoutGroupStyle _currentFoldoutStyle;
+        private bool _currentFoldoutInBox;
+
+        private bool BeginFoldout(string title, FoldoutGroupStyle style = FoldoutGroupStyle.Default, Color? color = null)
         {
             string key = target.GetType().FullName + "_foldout_" + title;
             if (!FoldoutStates.ContainsKey(key)) FoldoutStates[key] = true;
 
-            FoldoutStates[key] = EditorGUILayout.Foldout(FoldoutStates[key], title, true, EditorStyles.foldoutHeader);
+            _currentFoldoutStyle = style;
+            _currentFoldoutInBox = false;
+            Color titleColor = color ?? (EditorGUIUtility.isProSkin ? new Color(0.85f, 0.85f, 0.85f) : new Color(0.15f, 0.15f, 0.15f));
+
+            switch (style)
+            {
+                case FoldoutGroupStyle.Line:
+                    FoldoutStates[key] = EditorGUILayout.Foldout(FoldoutStates[key], "", true, EditorStyles.foldout);
+                    var lineRect = GUILayoutUtility.GetLastRect();
+                    lineRect.xMin += 12f;
+                    var prevColor = GUI.color;
+                    GUI.color = color.HasValue ? color.Value : GUI.color;
+                    EditorGUI.LabelField(lineRect, title, EditorStyles.boldLabel);
+                    GUI.color = prevColor;
+                    if (FoldoutStates[key])
+                    {
+                        Rect sep = EditorGUILayout.GetControlRect(false, 1f);
+                        EditorGUI.DrawRect(sep, EditorGUIUtility.isProSkin ? new Color(0.3f, 0.3f, 0.3f) : new Color(0.7f, 0.7f, 0.7f));
+                    }
+                    break;
+
+                case FoldoutGroupStyle.CenterLine:
+                    FoldoutStates[key] = EditorGUILayout.Foldout(FoldoutStates[key], "", true, EditorStyles.foldout);
+                    var clRect = GUILayoutUtility.GetLastRect();
+                    float textWidth = EditorStyles.boldLabel.CalcSize(new GUIContent(title)).x;
+                    float centerX = clRect.x + clRect.width * 0.5f;
+                    float lineY = clRect.y + clRect.height * 0.5f;
+                    Color lineCol = color ?? (EditorGUIUtility.isProSkin ? new Color(0.4f, 0.4f, 0.4f) : new Color(0.6f, 0.6f, 0.6f));
+                    EditorGUI.DrawRect(new Rect(clRect.x + 12f, lineY, centerX - textWidth * 0.5f - clRect.x - 16f, 1f), lineCol);
+                    EditorGUI.DrawRect(new Rect(centerX + textWidth * 0.5f + 4f, lineY, clRect.xMax - centerX - textWidth * 0.5f - 4f, 1f), lineCol);
+                    var titleStyle = new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.MiddleCenter };
+                    if (color.HasValue) titleStyle.normal.textColor = color.Value;
+                    EditorGUI.LabelField(new Rect(clRect.x + 12f, clRect.y, clRect.width - 12f, clRect.height), title, titleStyle);
+                    break;
+
+                case FoldoutGroupStyle.Box:
+                    _currentFoldoutInBox = true;
+                    Color bgColor = color ?? (EditorGUIUtility.isProSkin ? new Color(0.22f, 0.22f, 0.22f) : new Color(0.82f, 0.82f, 0.82f));
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    Rect boxRect = EditorGUILayout.GetControlRect(false, 20f);
+                    EditorGUI.DrawRect(new Rect(boxRect.x, boxRect.y, boxRect.width, boxRect.height), bgColor);
+                    var boxTitleStyle = new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.MiddleLeft };
+                    boxTitleStyle.normal.textColor = Color.white;
+                    FoldoutStates[key] = EditorGUI.Foldout(new Rect(boxRect.x, boxRect.y, boxRect.width, boxRect.height),
+                        FoldoutStates[key], title, true, new GUIStyle(EditorStyles.foldout) { fontStyle = FontStyle.Bold, normal = { textColor = Color.white }, onNormal = { textColor = Color.white } });
+                    break;
+
+                case FoldoutGroupStyle.Clean:
+                    FoldoutStates[key] = EditorGUILayout.Foldout(FoldoutStates[key], "", true, EditorStyles.foldout);
+                    var cleanRect = GUILayoutUtility.GetLastRect();
+                    cleanRect.xMin += 12f;
+                    var cleanStyle = new GUIStyle(EditorStyles.boldLabel);
+                    if (color.HasValue) cleanStyle.normal.textColor = color.Value;
+                    EditorGUI.LabelField(cleanRect, title, cleanStyle);
+                    break;
+
+                default:
+                    FoldoutStates[key] = EditorGUILayout.Foldout(FoldoutStates[key], title, true, EditorStyles.foldoutHeader);
+                    break;
+            }
 
             if (FoldoutStates[key])
             {
@@ -438,6 +508,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         private void EndFoldout()
         {
             EditorGUI.indentLevel--;
+            if (_currentFoldoutInBox)
+                EditorGUILayout.EndVertical();
             EditorGUILayout.Space(2);
         }
 
