@@ -428,17 +428,10 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             EditorGUILayout.Space(2);
         }
 
-        private FoldoutGroupStyle _currentFoldoutStyle;
-        private bool _currentFoldoutInBox;
-
         private bool BeginFoldout(string title, FoldoutGroupStyle style = FoldoutGroupStyle.Default, Color? color = null)
         {
             string key = target.GetType().FullName + "_foldout_" + title;
             if (!FoldoutStates.ContainsKey(key)) FoldoutStates[key] = true;
-
-            _currentFoldoutStyle = style;
-            _currentFoldoutInBox = false;
-            Color titleColor = color ?? (EditorGUIUtility.isProSkin ? new Color(0.85f, 0.85f, 0.85f) : new Color(0.15f, 0.15f, 0.15f));
 
             switch (style)
             {
@@ -471,18 +464,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     EditorGUI.LabelField(new Rect(clRect.x + 12f, clRect.y, clRect.width - 12f, clRect.height), title, titleStyle);
                     break;
 
-                case FoldoutGroupStyle.Box:
-                    _currentFoldoutInBox = true;
-                    Color bgColor = color ?? (EditorGUIUtility.isProSkin ? new Color(0.22f, 0.22f, 0.22f) : new Color(0.82f, 0.82f, 0.82f));
-                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                    Rect boxRect = EditorGUILayout.GetControlRect(false, 20f);
-                    EditorGUI.DrawRect(new Rect(boxRect.x, boxRect.y, boxRect.width, boxRect.height), bgColor);
-                    var boxTitleStyle = new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.MiddleLeft };
-                    boxTitleStyle.normal.textColor = Color.white;
-                    FoldoutStates[key] = EditorGUI.Foldout(new Rect(boxRect.x, boxRect.y, boxRect.width, boxRect.height),
-                        FoldoutStates[key], title, true, new GUIStyle(EditorStyles.foldout) { fontStyle = FontStyle.Bold, normal = { textColor = Color.white }, onNormal = { textColor = Color.white } });
-                    break;
-
                 case FoldoutGroupStyle.Clean:
                     FoldoutStates[key] = EditorGUILayout.Foldout(FoldoutStates[key], "", true, EditorStyles.foldout);
                     var cleanRect = GUILayoutUtility.GetLastRect();
@@ -508,8 +489,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         private void EndFoldout()
         {
             EditorGUI.indentLevel--;
-            if (_currentFoldoutInBox)
-                EditorGUILayout.EndVertical();
             EditorGUILayout.Space(2);
         }
 

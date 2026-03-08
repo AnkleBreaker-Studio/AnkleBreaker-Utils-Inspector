@@ -319,9 +319,9 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         [Test]
         public void FoldoutGroupAttribute_StoresStyle()
         {
-            var attr = new FoldoutGroupAttribute("Events", FoldoutGroupStyle.Box);
+            var attr = new FoldoutGroupAttribute("Events", FoldoutGroupStyle.Line);
             Assert.AreEqual("Events", attr.GroupName);
-            Assert.AreEqual(FoldoutGroupStyle.Box, attr.Style);
+            Assert.AreEqual(FoldoutGroupStyle.Line, attr.Style);
             Assert.IsFalse(attr.HasCustomColor);
         }
 
