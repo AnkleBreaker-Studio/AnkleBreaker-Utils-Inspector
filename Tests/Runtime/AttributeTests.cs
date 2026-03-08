@@ -312,6 +312,29 @@ namespace AnkleBreaker.Utils.Inspector.Tests
         {
             var attr = new FoldoutGroupAttribute("Advanced");
             Assert.AreEqual("Advanced", attr.GroupName);
+            Assert.AreEqual(FoldoutGroupStyle.Default, attr.Style);
+            Assert.IsFalse(attr.HasCustomColor);
+        }
+
+        [Test]
+        public void FoldoutGroupAttribute_StoresStyle()
+        {
+            var attr = new FoldoutGroupAttribute("Events", FoldoutGroupStyle.Box);
+            Assert.AreEqual("Events", attr.GroupName);
+            Assert.AreEqual(FoldoutGroupStyle.Box, attr.Style);
+            Assert.IsFalse(attr.HasCustomColor);
+        }
+
+        [Test]
+        public void FoldoutGroupAttribute_StoresStyleAndColor()
+        {
+            var attr = new FoldoutGroupAttribute("Net", FoldoutGroupStyle.CenterLine, 0.2f, 0.5f, 0.9f);
+            Assert.AreEqual("Net", attr.GroupName);
+            Assert.AreEqual(FoldoutGroupStyle.CenterLine, attr.Style);
+            Assert.IsTrue(attr.HasCustomColor);
+            Assert.AreEqual(0.2f, attr.R, 0.01f);
+            Assert.AreEqual(0.5f, attr.G, 0.01f);
+            Assert.AreEqual(0.9f, attr.B, 0.01f);
         }
 
         #endregion

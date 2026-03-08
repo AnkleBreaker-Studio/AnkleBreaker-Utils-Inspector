@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.4] - 2026-03-08
+
+### Added
+- `[FoldoutGroup]` now supports 5 visual styles via `FoldoutGroupStyle`: Default, Line, CenterLine, Box, Clean — with optional custom color (same pattern as SectionHeader)
+
+### Fixed
+- `InlineButtonAttribute` missing `using UnityEngine` causing CS0246 compile error
+
 ## [1.6.3] - 2026-03-07
 
 ### Added
