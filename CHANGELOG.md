@@ -1,9 +1,14 @@
 # Changelog
 
+## [1.6.5] - 2026-03-08
+
+### Removed
+- `FoldoutGroupStyle.Box` — redundant with `[BoxGroup("name", foldable: true)]`; enum now has 4 styles: Default, Line, CenterLine, Clean
+
 ## [1.6.4] - 2026-03-08
 
 ### Added
-- `[FoldoutGroup]` now supports 5 visual styles via `FoldoutGroupStyle`: Default, Line, CenterLine, Box, Clean — with optional custom color (same pattern as SectionHeader)
+- `[FoldoutGroup]` now supports visual styles via `FoldoutGroupStyle`: Default, Line, CenterLine, Clean — with optional custom color (same pattern as SectionHeader)
 
 ### Fixed
 - `InlineButtonAttribute` missing `using UnityEngine` causing CS0246 compile error

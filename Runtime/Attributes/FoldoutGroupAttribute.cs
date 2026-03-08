@@ -11,8 +11,6 @@ namespace AnkleBreaker.Utils.Inspector
         Line,
         /// <summary>Title centered between two horizontal lines — Title —</summary>
         CenterLine,
-        /// <summary>Full-width dark/light box background behind the title.</summary>
-        Box,
         /// <summary>Clean: bold label only, no extra decoration.</summary>
         Clean
     }
@@ -29,8 +27,8 @@ namespace AnkleBreaker.Utils.Inspector
     /// [FoldoutGroup("Movement")]
     /// public float jumpForce;
     ///
-    /// [FoldoutGroup("Events", FoldoutGroupStyle.Box, 0.2f, 0.6f, 1f)]
-    /// public UnityEvent onJump;
+    /// [FoldoutGroup("Network", FoldoutGroupStyle.CenterLine, 0.2f, 0.6f, 1f)]
+    /// public string serverAddress;
     /// </code></example>
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class FoldoutGroupAttribute : PropertyAttribute
