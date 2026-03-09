@@ -271,7 +271,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 // Foldout Group transitions
                 if (entry.FoldoutGroup != currentFoldout)
                 {
-                    if (currentFoldout != null) EndFoldout();
+                    if (currentFoldout != null) EndFoldout(currentFoldout);
                     if (entry.FoldoutGroup != null)
                     {
                         if (!BeginFoldout(entry.FoldoutGroup, entry.FoldoutStyle, entry.FoldoutColor))
@@ -362,7 +362,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
             // Close any open groups
             if (currentHoriz != null) EndHorizontal();
-            if (currentFoldout != null) EndFoldout();
+            if (currentFoldout != null) EndFoldout(currentFoldout);
             if (currentBox != null && !boxHidden) EndBox();
         }
 
@@ -488,9 +488,13 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             return FoldoutStates[key];
         }
 
-        private void EndFoldout()
+        private void EndFoldout(string foldoutName)
         {
-            EditorGUI.indentLevel--;
+            string key = target.GetType().FullName + "_foldout_" + foldoutName;
+            if (FoldoutStates.ContainsKey(key) && FoldoutStates[key])
+            {
+                EditorGUI.indentLevel--;
+            }
             EditorGUILayout.Space(2);
         }
 
