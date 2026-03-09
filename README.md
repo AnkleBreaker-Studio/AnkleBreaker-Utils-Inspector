@@ -1,12 +1,16 @@
-# AnkleBreaker Utils - Inspector
+# AnkleBreaker Studio - Utils Inspector
+
+[![Sponsor](https://img.shields.io/badge/Sponsor-AnkleBreaker%20Studio-red?logo=github)](https://github.com/sponsors/AnkleBreaker-Studio)
+[![Asset Store](https://img.shields.io/badge/Asset%20Store-AnkleBreaker%20Studio-blue)](https://assetstore.unity.com/publishers/101837)
 
 Custom inspector attributes and property drawers for Unity Editor. A powerful alternative to Odin Inspector with enhanced features.
 
 ## Installation
 
-Add via Unity Package Manager using Git URL:
+Add via Unity Package Manager using the Git URL:
+
 ```
-https://github.com/AnkleBreaker-Studio/utils-inspector.git#Release
+https://github.com/AnkleBreaker-Studio/AnkleBreaker-Utils-Inspector.git#Release
 ```
 
 ## Attributes
