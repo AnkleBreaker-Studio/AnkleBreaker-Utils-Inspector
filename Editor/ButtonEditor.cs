@@ -453,15 +453,17 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 case FoldoutGroupStyle.CenterLine:
                     FoldoutStates[key] = EditorGUILayout.Foldout(FoldoutStates[key], "", true, EditorStyles.foldout);
                     var clRect = GUILayoutUtility.GetLastRect();
-                    float textWidth = EditorStyles.boldLabel.CalcSize(new GUIContent(title)).x;
+                    string clArrow = FoldoutStates[key] ? "\u25BC" : "\u25B6";
+                    string clDisplay = $"{clArrow}  {title}  {clArrow}";
+                    var titleStyle = new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.MiddleCenter };
+                    if (color.HasValue) titleStyle.normal.textColor = color.Value;
+                    float textWidth = titleStyle.CalcSize(new GUIContent(clDisplay)).x;
                     float centerX = clRect.x + clRect.width * 0.5f;
                     float lineY = clRect.y + clRect.height * 0.5f;
                     Color lineCol = color ?? (EditorGUIUtility.isProSkin ? new Color(0.4f, 0.4f, 0.4f) : new Color(0.6f, 0.6f, 0.6f));
                     EditorGUI.DrawRect(new Rect(clRect.x + 12f, lineY, centerX - textWidth * 0.5f - clRect.x - 16f, 1f), lineCol);
                     EditorGUI.DrawRect(new Rect(centerX + textWidth * 0.5f + 4f, lineY, clRect.xMax - centerX - textWidth * 0.5f - 4f, 1f), lineCol);
-                    var titleStyle = new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.MiddleCenter };
-                    if (color.HasValue) titleStyle.normal.textColor = color.Value;
-                    EditorGUI.LabelField(new Rect(clRect.x + 12f, clRect.y, clRect.width - 12f, clRect.height), title, titleStyle);
+                    EditorGUI.LabelField(new Rect(clRect.x + 12f, clRect.y, clRect.width - 12f, clRect.height), clDisplay, titleStyle);
                     break;
 
                 case FoldoutGroupStyle.Clean:
