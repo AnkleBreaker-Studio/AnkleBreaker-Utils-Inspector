@@ -1,16 +1,18 @@
 {
   "name": "com.anklebreaker-studio.utils.inspector",
   "version": "1.6.5",
-  "displayName": "AnkleBreaker-studio Utils Inspector",
+  "displayName": "AnkleBreaker Studio - Utils Inspector",
   "description": "Powerful custom inspector attributes and property drawers for Unity Editor. Features 30+ attributes including conditional visibility, layout grouping, toggle buttons, asset preview with metadata, validation, and more.",
   "unity": "2022.3",
   "type": "library",
+  "license": "MIT",
   "repository": {
     "url": "https://github.com/AnkleBreaker-Studio/AnkleBreaker-Utils-Inspector.git",
     "type": "git"
   },
   "author": {
-    "name": "AnkleBreaker-studio",
+    "name": "AnkleBreaker Studio",
+    "email": "contact@anklebreaker-studio.com",
     "url": "https://www.anklebreaker-studio.com"
   },
   "dependencies": {}
