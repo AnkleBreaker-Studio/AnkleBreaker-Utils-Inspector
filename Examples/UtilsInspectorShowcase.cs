@@ -292,15 +292,11 @@ public class UtilsInspectorShowcase : MonoBehaviour
     // ============================================================
     // FOLDOUT GROUP
     // ============================================================
-    [SectionHeader("Foldout Group")]
-
-    [FoldoutGroup("Audio Settings")]
+    [FoldoutGroup("Audio Settings", FoldoutGroupStyle.CenterLine)]
     public float masterVolume = 1f;
-
-    [FoldoutGroup("Audio Settings")]
+    [FoldoutGroup("Audio Settings", FoldoutGroupStyle.CenterLine)]
     public float musicVolume = 0.8f;
-
-    [FoldoutGroup("Audio Settings")]
+    [FoldoutGroup("Audio Settings", FoldoutGroupStyle.CenterLine)]
     public float sfxVolume = 0.9f;
 
     [FoldoutGroup("Debug Options", FoldoutGroupStyle.Line)]
