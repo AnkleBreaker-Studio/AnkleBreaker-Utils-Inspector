@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.7] - 2026-03-30
+
+### Fixed
+- `FoldoutGroupAttribute.Style` changed to read-write property (fixes CS0617 when using named attribute syntax `Style = FoldoutGroupStyle.Line`)
+- `ShowInInspectorAttribute.RuntimeOnly` changed to read-write property (fixes CS0617 when using named attribute syntax `RuntimeOnly = true`)
+
 ## [1.6.5] - 2026-03-08
 
 ### Removed
