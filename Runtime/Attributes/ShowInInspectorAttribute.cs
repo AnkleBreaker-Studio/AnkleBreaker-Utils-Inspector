@@ -11,7 +11,7 @@ namespace AnkleBreaker.Utils.Inspector
     public class ShowInInspectorAttribute : Attribute
     {
         /// <summary>When true, the entry is only visible during Play mode.</summary>
-        public bool RuntimeOnly { get; }
+        public bool RuntimeOnly { get; set; }
 
         public ShowInInspectorAttribute() { }
 

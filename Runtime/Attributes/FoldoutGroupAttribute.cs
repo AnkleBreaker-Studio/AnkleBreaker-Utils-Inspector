@@ -34,7 +34,7 @@ namespace AnkleBreaker.Utils.Inspector
     public class FoldoutGroupAttribute : PropertyAttribute
     {
         public string GroupName { get; private set; }
-        public FoldoutGroupStyle Style { get; private set; }
+        public FoldoutGroupStyle Style { get; set; }
         public bool HasCustomColor { get; private set; }
         public float R { get; private set; }
         public float G { get; private set; }
