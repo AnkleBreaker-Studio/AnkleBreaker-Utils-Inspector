@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -14,6 +15,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
     /// They are only committed to the arrays when the user clicks "Add".
     ///
     /// Pagination: displays PageSize entries at a time with Prev/Next controls.
+    /// Right-click context menu: Copy / Paste / Clear Dictionary.
     /// </summary>
     [CustomPropertyDrawer(typeof(AB_SerializedDictionary<,>), true)]
     public class AB_SerializedDictionaryPropertyDrawer : PropertyDrawer
@@ -31,7 +33,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         private const float AddBtnH       = 20f;
         private const float RowH          = 18f;
         private const float PaginationH   = 22f;
-        private const int   PageSize      = 20;
+        private const int   PageSize      = 12;
 
         // ── Colors ──────────────────────────────────────────────────
         static Color C_HeaderBg(bool d)  => d ? new Color(0.21f, 0.21f, 0.21f) : new Color(0.72f, 0.72f, 0.72f);
@@ -56,6 +58,9 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         // ── Pagination state (in memory) ────────────────────────────
         private static readonly Dictionary<string, int> s_CurrentPage = new();
 
+        // ── Clipboard (in memory, shared across all dictionaries) ───
+        private static string s_ClipboardJson;
+
         static string PK(SerializedProperty p) =>
             p.propertyPath + "##" + p.serializedObject.targetObject.GetInstanceID();
 
@@ -79,14 +84,12 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         // ─────────────────────────────────────────────────────────────
         static StagingEntry CreateStaging(SerializedProperty keys, SerializedProperty values)
         {
-            // We need to detect the element type. Temporarily insert + read + remove.
             bool wasEmptyK = keys.arraySize == 0;
             bool wasEmptyV = values.arraySize == 0;
 
             if (wasEmptyK) keys.InsertArrayElementAtIndex(0);
             if (wasEmptyV) values.InsertArrayElementAtIndex(0);
 
-            // Force apply so we can read types
             keys.serializedObject.ApplyModifiedPropertiesWithoutUndo();
 
             var kProp = keys.GetArrayElementAtIndex(wasEmptyK ? 0 : keys.arraySize - 1);
@@ -100,7 +103,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 valValue = DefaultFor(vProp.propertyType)
             };
 
-            // Remove temp elements
             if (wasEmptyK) { keys.DeleteArrayElementAtIndex(0); }
             if (wasEmptyV) { values.DeleteArrayElementAtIndex(0); }
 
@@ -144,6 +146,207 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         }
 
         bool NeedsPagination(int count) => count > PageSize;
+
+        // ─────────────────────────────────────────────────────────────
+        //  CONTEXT MENU (right-click)
+        // ─────────────────────────────────────────────────────────────
+        void ShowContextMenu(SerializedProperty property, SerializedProperty keys, SerializedProperty values)
+        {
+            var menu = new GenericMenu();
+            int count = keys.arraySize;
+
+            // ── Copy ─────────────────────────────────────────────────
+            if (count > 0)
+            {
+                menu.AddItem(new GUIContent("Copy"), false, () =>
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine("{");
+                    for (int i = 0; i < keys.arraySize; i++)
+                    {
+                        string k = PropStr(keys.GetArrayElementAtIndex(i));
+                        string v = PropStr(values.GetArrayElementAtIndex(i));
+                        sb.Append($"  \"{Escape(k)}\": \"{Escape(v)}\"");
+                        if (i < keys.arraySize - 1) sb.Append(",");
+                        sb.AppendLine();
+                    }
+                    sb.Append("}");
+                    string json = sb.ToString();
+                    s_ClipboardJson = json;
+                    EditorGUIUtility.systemCopyBuffer = json;
+                });
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("Copy"));
+            }
+
+            // ── Paste ────────────────────────────────────────────────
+            string clipboard = EditorGUIUtility.systemCopyBuffer;
+            bool canPaste = !string.IsNullOrEmpty(clipboard) && clipboard.TrimStart().StartsWith("{");
+            if (!canPaste && !string.IsNullOrEmpty(s_ClipboardJson))
+            {
+                clipboard = s_ClipboardJson;
+                canPaste = true;
+            }
+
+            if (canPaste)
+            {
+                string clipRef = clipboard;
+                menu.AddItem(new GUIContent("Paste"), false, () =>
+                {
+                    PasteDictionary(property, keys, values, clipRef);
+                });
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("Paste"));
+            }
+
+            menu.AddSeparator("");
+
+            // ── Clear Dictionary ─────────────────────────────────────
+            if (count > 0)
+            {
+                menu.AddItem(new GUIContent("Clear Dictionary"), false, () =>
+                {
+                    keys.ClearArray();
+                    values.ClearArray();
+                    keys.serializedObject.ApplyModifiedProperties();
+                    ClearStaging(property);
+                    SetPage(property, 0);
+                });
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("Clear Dictionary"));
+            }
+
+            menu.ShowAsContext();
+        }
+
+        static string Escape(string s) => s?.Replace("\\", "\\\\").Replace("\"", "\\\"") ?? "";
+
+        static string Unescape(string s) => s?.Replace("\\\"", "\"").Replace("\\\\", "\\") ?? "";
+
+        /// <summary>
+        /// Minimal JSON-like parser for pasting key-value pairs.
+        /// Expects format: { "key": "value", ... }
+        /// Values are written back through SetPropertyValue using the existing array element types.
+        /// </summary>
+        void PasteDictionary(SerializedProperty property, SerializedProperty keys, SerializedProperty values, string json)
+        {
+            var pairs = ParseSimpleJson(json);
+            if (pairs == null || pairs.Count == 0) return;
+
+            // Build set of existing keys to avoid duplicates
+            var existingKeys = new HashSet<string>();
+            for (int i = 0; i < keys.arraySize; i++)
+                existingKeys.Add(PropStr(keys.GetArrayElementAtIndex(i)));
+
+            // Detect element types (need at least one element or create temp)
+            bool wasEmptyK = keys.arraySize == 0;
+            bool wasEmptyV = values.arraySize == 0;
+            if (wasEmptyK) keys.InsertArrayElementAtIndex(0);
+            if (wasEmptyV) values.InsertArrayElementAtIndex(0);
+            keys.serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            var refK = keys.GetArrayElementAtIndex(0);
+            var refV = values.GetArrayElementAtIndex(0);
+            var kType = refK.propertyType;
+            var vType = refV.propertyType;
+
+            if (wasEmptyK) keys.DeleteArrayElementAtIndex(0);
+            if (wasEmptyV) values.DeleteArrayElementAtIndex(0);
+            if (wasEmptyK || wasEmptyV)
+                keys.serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            int added = 0;
+            foreach (var pair in pairs)
+            {
+                // Skip duplicates
+                string keyStr = pair.Key;
+                if (existingKeys.Contains(keyStr)) continue;
+
+                int idx = keys.arraySize;
+                keys.InsertArrayElementAtIndex(idx);
+                values.InsertArrayElementAtIndex(idx);
+
+                SetPropertyValue(keys.GetArrayElementAtIndex(idx), kType, ParseValue(kType, pair.Key));
+                SetPropertyValue(values.GetArrayElementAtIndex(idx), vType, ParseValue(vType, pair.Value));
+
+                existingKeys.Add(keyStr);
+                added++;
+            }
+
+            if (added > 0)
+            {
+                keys.serializedObject.ApplyModifiedProperties();
+                SetPage(property, TotalPages(keys.arraySize) - 1);
+            }
+        }
+
+        static object ParseValue(SerializedPropertyType type, string raw) => type switch
+        {
+            SerializedPropertyType.Integer         => int.TryParse(raw, out int i) ? i : 0,
+            SerializedPropertyType.Float           => float.TryParse(raw, System.Globalization.NumberStyles.Float,
+                                                        System.Globalization.CultureInfo.InvariantCulture, out float f) ? f : 0f,
+            SerializedPropertyType.Boolean         => bool.TryParse(raw, out bool b) && b,
+            SerializedPropertyType.String          => raw ?? "",
+            SerializedPropertyType.Enum            => int.TryParse(raw, out int ei) ? ei : 0,
+            _                                      => raw
+        };
+
+        /// <summary>
+        /// Minimal parser: extracts "key": "value" pairs from a JSON-like string.
+        /// </summary>
+        static List<KeyValuePair<string, string>> ParseSimpleJson(string json)
+        {
+            var result = new List<KeyValuePair<string, string>>();
+            if (string.IsNullOrEmpty(json)) return result;
+
+            int pos = json.IndexOf('{');
+            if (pos < 0) return result;
+            pos++;
+
+            while (pos < json.Length)
+            {
+                // Find next quoted key
+                int kStart = json.IndexOf('"', pos);
+                if (kStart < 0) break;
+                int kEnd = FindClosingQuote(json, kStart + 1);
+                if (kEnd < 0) break;
+
+                string key = Unescape(json.Substring(kStart + 1, kEnd - kStart - 1));
+
+                // Find colon
+                int colon = json.IndexOf(':', kEnd + 1);
+                if (colon < 0) break;
+
+                // Find value (quoted string)
+                int vStart = json.IndexOf('"', colon + 1);
+                if (vStart < 0) break;
+                int vEnd = FindClosingQuote(json, vStart + 1);
+                if (vEnd < 0) break;
+
+                string val = Unescape(json.Substring(vStart + 1, vEnd - vStart - 1));
+
+                result.Add(new KeyValuePair<string, string>(key, val));
+                pos = vEnd + 1;
+            }
+
+            return result;
+        }
+
+        static int FindClosingQuote(string s, int from)
+        {
+            for (int i = from; i < s.Length; i++)
+            {
+                if (s[i] == '\\') { i++; continue; }
+                if (s[i] == '"') return i;
+            }
+            return -1;
+        }
 
         // ─────────────────────────────────────────────────────────────
         //  HEIGHT
@@ -200,6 +403,13 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
             bool dark  = EditorGUIUtility.isProSkin;
             int  count = keys.arraySize;
+
+            // ── RIGHT-CLICK CONTEXT MENU ─────────────────────────────
+            if (Event.current.type == EventType.ContextClick && pos.Contains(Event.current.mousePosition))
+            {
+                ShowContextMenu(property, keys, values);
+                Event.current.Use();
+            }
 
             // ═══════════════════════════════════════════════════════════
             //  HEADER
@@ -302,7 +512,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 {
                     if (GUI.Button(addRect, "Add"))
                     {
-                        // Commit staging: insert into arrays
                         int idx = keys.arraySize;
                         keys.InsertArrayElementAtIndex(idx);
                         values.InsertArrayElementAtIndex(idx);
@@ -310,7 +519,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                         SetPropertyValue(values.GetArrayElementAtIndex(idx), stg.valType, stg.valValue);
                         ClearStaging(property);
 
-                        // Jump to last page so the new element is visible
                         int newCount = keys.arraySize;
                         SetPage(property, TotalPages(newCount) - 1);
                     }
@@ -323,7 +531,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             y += SepH + Pad;
 
             // ── COLUMN HEADERS ───────────────────────────────────────
-            // Refresh count (might have changed after Add)
             count = keys.arraySize;
 
             Rect colR = new Rect(pos.x, y, pos.width, ColHeaderH);
@@ -347,7 +554,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             HashSet<int> dupes = DetectDuplicates(keys, count);
 
             int page = ClampPage(GetPage(property), count);
-            SetPage(property, page); // store clamped value
+            SetPage(property, page);
             GetPageRange(page, count, out int startIdx, out int endIdx);
 
             for (int i = startIdx; i < endIdx; i++)
@@ -382,7 +589,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             {
                 keys.DeleteArrayElementAtIndex(removeIdx);
                 values.DeleteArrayElementAtIndex(removeIdx);
-                // Re-clamp page after removal
                 int newCount = keys.arraySize;
                 SetPage(property, ClampPage(page, newCount));
             }
@@ -398,13 +604,11 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 float btnW = 50f;
                 float labelW = barW - btnW * 2 - Pad * 2;
 
-                // Prev button
                 EditorGUI.BeginDisabledGroup(page <= 0);
                 if (GUI.Button(new Rect(barX, y, btnW, PaginationH), "◀ Prev"))
                     SetPage(property, page - 1);
                 EditorGUI.EndDisabledGroup();
 
-                // Page label "Page X / Y  (items start-end of total)"
                 GUIStyle pageStyle = new GUIStyle(EditorStyles.miniLabel)
                 {
                     alignment = TextAnchor.MiddleCenter,
@@ -413,7 +617,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 string pageLabel = $"Page {page + 1} / {totalPages}   ({startIdx + 1}–{endIdx} of {count})";
                 EditorGUI.LabelField(new Rect(barX + btnW + Pad, y, labelW, PaginationH), pageLabel, pageStyle);
 
-                // Next button
                 EditorGUI.BeginDisabledGroup(page >= totalPages - 1);
                 if (GUI.Button(new Rect(barX + barW - btnW, y, btnW, PaginationH), "Next ▶"))
                     SetPage(property, page + 1);
@@ -441,8 +644,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     return EditorGUI.Toggle(rect, value is bool b && b);
 
                 case SerializedPropertyType.Enum:
-                    // We can't easily draw an enum popup without the actual type.
-                    // Fall back to int field for the enum index.
                     return EditorGUI.IntField(rect, value is int ei ? ei : 0);
 
                 case SerializedPropertyType.Color:
