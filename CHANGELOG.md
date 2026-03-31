@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.6.8] - 2026-03-31
+
+### Added
+- `AB_SerializedDictionaryPropertyDrawer` — Odin-style custom PropertyDrawer for `AB_SerializedDictionary<K,V>` (no Odin dependency)
+  - Foldout header with item count and "+" button
+  - Staging area (Key/Value fields) with "Add" button to commit new entries
+  - Duplicate key detection: "Add" button greyed out with warning message when key already exists
+  - Table view with "Key" / "Value" column headers, alternating row colors, per-row "×" remove button
+  - Staging values stored in memory only — never interferes with dictionary serialization round-trip
+  - Supports dark and light editor themes
+
 ## [1.6.7] - 2026-03-30
 
 ### Fixed
