@@ -12,6 +12,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
     /// Staging values live in memory (not in the serialized arrays) so they
     /// never interfere with the Dictionary serialization round-trip.
     /// They are only committed to the arrays when the user clicks "Add".
+    ///
+    /// Pagination: displays PageSize entries at a time with Prev/Next controls.
     /// </summary>
     [CustomPropertyDrawer(typeof(AB_SerializedDictionary<,>), true)]
     public class AB_SerializedDictionaryPropertyDrawer : PropertyDrawer
@@ -28,6 +30,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         private const float StagingLabelW = 46f;
         private const float AddBtnH       = 20f;
         private const float RowH          = 18f;
+        private const float PaginationH   = 22f;
+        private const int   PageSize      = 20;
 
         // ── Colors ──────────────────────────────────────────────────
         static Color C_HeaderBg(bool d)  => d ? new Color(0.21f, 0.21f, 0.21f) : new Color(0.72f, 0.72f, 0.72f);
@@ -49,6 +53,9 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
         private static readonly Dictionary<string, StagingEntry> s_Staging = new();
 
+        // ── Pagination state (in memory) ────────────────────────────
+        private static readonly Dictionary<string, int> s_CurrentPage = new();
+
         static string PK(SerializedProperty p) =>
             p.propertyPath + "##" + p.serializedObject.targetObject.GetInstanceID();
 
@@ -58,6 +65,14 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             s_Staging.TryGetValue(PK(p), out var e) ? e : null;
 
         static void ClearStaging(SerializedProperty p) => s_Staging.Remove(PK(p));
+
+        static int GetPage(SerializedProperty p)
+        {
+            s_CurrentPage.TryGetValue(PK(p), out int page);
+            return page;
+        }
+
+        static void SetPage(SerializedProperty p, int page) => s_CurrentPage[PK(p)] = page;
 
         // ─────────────────────────────────────────────────────────────
         //  CREATE STAGING from array type info
@@ -112,6 +127,25 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         };
 
         // ─────────────────────────────────────────────────────────────
+        //  PAGINATION HELPERS
+        // ─────────────────────────────────────────────────────────────
+        static int TotalPages(int count) => count <= 0 ? 1 : Mathf.CeilToInt((float)count / PageSize);
+
+        static int ClampPage(int page, int count)
+        {
+            int maxPage = TotalPages(count) - 1;
+            return Mathf.Clamp(page, 0, maxPage);
+        }
+
+        static void GetPageRange(int page, int count, out int start, out int end)
+        {
+            start = page * PageSize;
+            end   = Mathf.Min(start + PageSize, count);
+        }
+
+        bool NeedsPagination(int count) => count > PageSize;
+
+        // ─────────────────────────────────────────────────────────────
         //  HEIGHT
         // ─────────────────────────────────────────────────────────────
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -132,13 +166,20 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             // Separator + column headers
             h += SepH + Pad + ColHeaderH;
 
-            // Rows
-            for (int i = 0; i < count; i++)
+            // Paginated rows only
+            int page = ClampPage(GetPage(property), count);
+            GetPageRange(page, count, out int start, out int end);
+
+            for (int i = start; i < end; i++)
             {
                 float kH = EditorGUI.GetPropertyHeight(keys.GetArrayElementAtIndex(i), true);
                 float vH = EditorGUI.GetPropertyHeight(values.GetArrayElementAtIndex(i), true);
                 h += Mathf.Max(kH, vH) + Pad;
             }
+
+            // Pagination bar
+            if (NeedsPagination(count))
+                h += Pad + PaginationH;
 
             h += BoxPad;
             return h;
@@ -268,6 +309,10 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                         SetPropertyValue(keys.GetArrayElementAtIndex(idx), stg.keyType, stg.keyValue);
                         SetPropertyValue(values.GetArrayElementAtIndex(idx), stg.valType, stg.valValue);
                         ClearStaging(property);
+
+                        // Jump to last page so the new element is visible
+                        int newCount = keys.arraySize;
+                        SetPage(property, TotalPages(newCount) - 1);
                     }
                 }
                 y += AddBtnH + Pad;
@@ -297,11 +342,15 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             EditorGUI.LabelField(new Rect(pos.x + BoxPad + keyColW, y, valColW, ColHeaderH), "Value", colStyle);
             y += ColHeaderH;
 
-            // ── TABLE ROWS ───────────────────────────────────────────
+            // ── TABLE ROWS (paginated) ───────────────────────────────
             int removeIdx = -1;
             HashSet<int> dupes = DetectDuplicates(keys, count);
 
-            for (int i = 0; i < count; i++)
+            int page = ClampPage(GetPage(property), count);
+            SetPage(property, page); // store clamped value
+            GetPageRange(page, count, out int startIdx, out int endIdx);
+
+            for (int i = startIdx; i < endIdx; i++)
             {
                 var kp = keys.GetArrayElementAtIndex(i);
                 var vp = values.GetArrayElementAtIndex(i);
@@ -333,6 +382,42 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             {
                 keys.DeleteArrayElementAtIndex(removeIdx);
                 values.DeleteArrayElementAtIndex(removeIdx);
+                // Re-clamp page after removal
+                int newCount = keys.arraySize;
+                SetPage(property, ClampPage(page, newCount));
+            }
+
+            // ── PAGINATION BAR ───────────────────────────────────────
+            if (NeedsPagination(count))
+            {
+                y += Pad;
+                int totalPages = TotalPages(count);
+
+                float barX = pos.x + BoxPad;
+                float barW = pos.width - BoxPad * 2;
+                float btnW = 50f;
+                float labelW = barW - btnW * 2 - Pad * 2;
+
+                // Prev button
+                EditorGUI.BeginDisabledGroup(page <= 0);
+                if (GUI.Button(new Rect(barX, y, btnW, PaginationH), "◀ Prev"))
+                    SetPage(property, page - 1);
+                EditorGUI.EndDisabledGroup();
+
+                // Page label "Page X / Y  (items start-end of total)"
+                GUIStyle pageStyle = new GUIStyle(EditorStyles.miniLabel)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    normal = { textColor = dark ? new Color(0.7f, 0.7f, 0.7f) : new Color(0.3f, 0.3f, 0.3f) }
+                };
+                string pageLabel = $"Page {page + 1} / {totalPages}   ({startIdx + 1}–{endIdx} of {count})";
+                EditorGUI.LabelField(new Rect(barX + btnW + Pad, y, labelW, PaginationH), pageLabel, pageStyle);
+
+                // Next button
+                EditorGUI.BeginDisabledGroup(page >= totalPages - 1);
+                if (GUI.Button(new Rect(barX + barW - btnW, y, btnW, PaginationH), "Next ▶"))
+                    SetPage(property, page + 1);
+                EditorGUI.EndDisabledGroup();
             }
         }
 
