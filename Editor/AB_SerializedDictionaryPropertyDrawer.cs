@@ -85,12 +85,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         // ─────────────────────────────────────────────────────────────
         //  RESOLVE GENERIC TYPE ARGUMENTS (TKey, TValue)
         // ─────────────────────────────────────────────────────────────
-        /// <summary>
-        /// Walks the type hierarchy of <paramref name="fieldType"/> to find the
-        /// closed generic form of AB_SerializedDictionary&lt;TKey,TValue&gt;
-        /// and returns { typeof(TKey), typeof(TValue) }.
-        /// Returns null if resolution fails.
-        /// </summary>
         static Type[] ResolveGenericArgs(Type fieldType)
         {
             if (fieldType == null) return null;
@@ -109,62 +103,65 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             return null;
         }
 
-        /// <summary>
-        /// Friendly display name for a Type: strips namespaces, handles common types.
-        /// </summary>
         static string NiceTypeName(Type t)
         {
             if (t == null) return "?";
-            if (t == typeof(int))    return "int";
-            if (t == typeof(float))  return "float";
-            if (t == typeof(bool))   return "bool";
-            if (t == typeof(string)) return "string";
-            if (t == typeof(Color))  return "Color";
+            if (t == typeof(int))     return "int";
+            if (t == typeof(float))   return "float";
+            if (t == typeof(bool))    return "bool";
+            if (t == typeof(string))  return "string";
+            if (t == typeof(Color))   return "Color";
             if (t == typeof(Vector2)) return "Vector2";
             if (t == typeof(Vector3)) return "Vector3";
             if (t == typeof(Vector4)) return "Vector4";
-            if (t == typeof(Rect))   return "Rect";
+            if (t == typeof(Rect))    return "Rect";
             return t.Name;
         }
 
         // ─────────────────────────────────────────────────────────────
-        //  CREATE STAGING from array type info
+        //  MAP C# Type → SerializedPropertyType (no array insertion needed)
         // ─────────────────────────────────────────────────────────────
-        StagingEntry CreateStaging(SerializedProperty keys, SerializedProperty values)
+        static SerializedPropertyType TypeToPropertyType(Type t)
         {
-            bool wasEmptyK = keys.arraySize == 0;
-            bool wasEmptyV = values.arraySize == 0;
+            if (t == null)                                    return SerializedPropertyType.Generic;
+            if (t == typeof(int) || t == typeof(long) ||
+                t == typeof(short) || t == typeof(byte))      return SerializedPropertyType.Integer;
+            if (t == typeof(float) || t == typeof(double))    return SerializedPropertyType.Float;
+            if (t == typeof(bool))                            return SerializedPropertyType.Boolean;
+            if (t == typeof(string))                          return SerializedPropertyType.String;
+            if (t.IsEnum)                                     return SerializedPropertyType.Enum;
+            if (t == typeof(Color) || t == typeof(Color32))   return SerializedPropertyType.Color;
+            if (t == typeof(Vector2) || t == typeof(Vector2Int)) return SerializedPropertyType.Vector2;
+            if (t == typeof(Vector3) || t == typeof(Vector3Int)) return SerializedPropertyType.Vector3;
+            if (t == typeof(Vector4))                         return SerializedPropertyType.Vector4;
+            if (t == typeof(Rect) || t == typeof(RectInt))    return SerializedPropertyType.Rect;
+            if (typeof(Object).IsAssignableFrom(t))           return SerializedPropertyType.ObjectReference;
+            return SerializedPropertyType.Generic;
+        }
 
-            if (wasEmptyK) keys.InsertArrayElementAtIndex(0);
-            if (wasEmptyV) values.InsertArrayElementAtIndex(0);
-
-            keys.serializedObject.ApplyModifiedPropertiesWithoutUndo();
-
-            var kProp = keys.GetArrayElementAtIndex(wasEmptyK ? 0 : keys.arraySize - 1);
-            var vProp = values.GetArrayElementAtIndex(wasEmptyV ? 0 : values.arraySize - 1);
-
-            // Resolve actual C# types from the field's generic arguments
+        // ─────────────────────────────────────────────────────────────
+        //  CREATE STAGING — pure reflection, no array mutation
+        // ─────────────────────────────────────────────────────────────
+        StagingEntry CreateStaging()
+        {
             var genericArgs = ResolveGenericArgs(fieldInfo.FieldType);
-            Type keyObjType = genericArgs != null ? genericArgs[0] : typeof(Object);
-            Type valObjType = genericArgs != null ? genericArgs[1] : typeof(Object);
+            if (genericArgs == null || genericArgs.Length < 2) return null;
 
-            var entry = new StagingEntry
+            Type keyType = genericArgs[0];
+            Type valType = genericArgs[1];
+
+            var kPropType = TypeToPropertyType(keyType);
+            var vPropType = TypeToPropertyType(valType);
+
+            return new StagingEntry
             {
-                keyType       = kProp.propertyType,
-                valType       = vProp.propertyType,
-                keyObjectType = keyObjType,
-                valObjectType = valObjType,
-                keyValue      = DefaultFor(kProp.propertyType),
-                valValue      = DefaultFor(vProp.propertyType)
+                keyType       = kPropType,
+                valType       = vPropType,
+                keyObjectType = keyType,
+                valObjectType = valType,
+                keyValue      = DefaultFor(kPropType),
+                valValue      = DefaultFor(vPropType)
             };
-
-            if (wasEmptyK) { keys.DeleteArrayElementAtIndex(0); }
-            if (wasEmptyV) { values.DeleteArrayElementAtIndex(0); }
-
-            if (wasEmptyK || wasEmptyV)
-                keys.serializedObject.ApplyModifiedPropertiesWithoutUndo();
-
-            return entry;
         }
 
         static object DefaultFor(SerializedPropertyType t) => t switch
@@ -290,21 +287,9 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             for (int i = 0; i < keys.arraySize; i++)
                 existingKeys.Add(PropStr(keys.GetArrayElementAtIndex(i)));
 
-            bool wasEmptyK = keys.arraySize == 0;
-            bool wasEmptyV = values.arraySize == 0;
-            if (wasEmptyK) keys.InsertArrayElementAtIndex(0);
-            if (wasEmptyV) values.InsertArrayElementAtIndex(0);
-            keys.serializedObject.ApplyModifiedPropertiesWithoutUndo();
-
-            var refK = keys.GetArrayElementAtIndex(0);
-            var refV = values.GetArrayElementAtIndex(0);
-            var kType = refK.propertyType;
-            var vType = refV.propertyType;
-
-            if (wasEmptyK) keys.DeleteArrayElementAtIndex(0);
-            if (wasEmptyV) values.DeleteArrayElementAtIndex(0);
-            if (wasEmptyK || wasEmptyV)
-                keys.serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            var genericArgs = ResolveGenericArgs(fieldInfo.FieldType);
+            var kType = genericArgs != null ? TypeToPropertyType(genericArgs[0]) : SerializedPropertyType.String;
+            var vType = genericArgs != null ? TypeToPropertyType(genericArgs[1]) : SerializedPropertyType.String;
 
             int added = 0;
             foreach (var pair in pairs)
@@ -480,8 +465,9 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 property.isExpanded = true;
                 if (!HasStaging(property))
                 {
-                    var staging = CreateStaging(keys, values);
-                    s_Staging[PK(property)] = staging;
+                    var staging = CreateStaging();
+                    if (staging != null)
+                        s_Staging[PK(property)] = staging;
                 }
             }
 
@@ -514,12 +500,12 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 float fieldX = pos.x + BoxPad + StagingLabelW + Pad;
                 float fieldW = pos.width - BoxPad * 2 - StagingLabelW - Pad;
 
-                // Key field — pass actual TKey type for correct ObjectField / EnumPopup
+                // Key field
                 EditorGUI.LabelField(new Rect(pos.x + BoxPad, y, StagingLabelW, RowH), "Key", stageLbl);
                 stg.keyValue = DrawValueField(new Rect(fieldX, y, fieldW, RowH), stg.keyType, stg.keyValue, stg.keyObjectType);
                 y += RowH + Pad;
 
-                // Value field — pass actual TValue type
+                // Value field
                 EditorGUI.LabelField(new Rect(pos.x + BoxPad, y, StagingLabelW, RowH), "Value", stageLbl);
                 stg.valValue = DrawValueField(new Rect(fieldX, y, fieldW, RowH), stg.valType, stg.valValue, stg.valObjectType);
                 y += RowH + Pad;
@@ -684,7 +670,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
                 case SerializedPropertyType.Enum:
                 {
-                    // Use actual enum type if available for proper popup
                     if (objectType != null && objectType.IsEnum)
                     {
                         Enum enumVal;
@@ -714,7 +699,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
                 case SerializedPropertyType.ObjectReference:
                 {
-                    // Use actual type (e.g. MyScriptableObject) instead of generic Object
                     Type filterType = (objectType != null && typeof(Object).IsAssignableFrom(objectType))
                         ? objectType
                         : typeof(Object);
