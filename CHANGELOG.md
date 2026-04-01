@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.6.9] - 2026-04-01
+
+### Added
+- Pagination for `AB_SerializedDictionaryPropertyDrawer` (12 items per page, Prev/Next navigation)
+- Right-click context menu on dictionary: Copy, Paste, Clear Dictionary
+  - Copy serializes all entries as JSON to system clipboard
+  - Paste deserializes JSON and adds non-duplicate entries
+  - Clear removes all entries
+
+### Changed
+- Page size set to 12 items per page
+
+## [1.6.8] - 2026-03-31
+
+### Added
+- `AB_SerializedDictionaryPropertyDrawer` — custom PropertyDrawer for `AB_SerializedDictionary<K,V>`
+  - Foldout header with item count and "+" button
+  - Staging area (Key/Value fields) with "Add" button to commit new entries
+  - Duplicate key detection: "Add" button greyed out with warning message when key already exists
+  - Table view with "Key" / "Value" column headers, alternating row colors, per-row "×" remove button
+  - Staging values stored in memory only — never interferes with dictionary serialization round-trip
+  - Supports dark and light editor themes
+
 ## [1.6.7] - 2026-03-30
 
 ### Fixed
@@ -106,7 +129,7 @@
 ## [1.1.0] - 2026-03-03
 
 ### Added
-- 20 Odin-like inspector attributes: ShowIf, HideIf, EnableIf, BoxGroup, FoldoutGroup, TabGroup, HorizontalGroup, PropertyOrder, PropertySpace, SectionHeader, ProgressBar, MinMaxSlider, SuffixLabel, EnumToggleButtons, GUIColor, DisableInPlayMode, DisableInEditorMode, InlineButton, ValueDropdown, OnValueChanged, ValidateInput, InfoBox, PreviewField, InlineEditor, TableList, ShowInInspector, ToggleButton, FreeRange, Required
+- 20 inspector attributes: ShowIf, HideIf, EnableIf, BoxGroup, FoldoutGroup, TabGroup, HorizontalGroup, PropertyOrder, PropertySpace, SectionHeader, ProgressBar, MinMaxSlider, SuffixLabel, EnumToggleButtons, GUIColor, DisableInPlayMode, DisableInEditorMode, InlineButton, ValueDropdown, OnValueChanged, ValidateInput, InfoBox, PreviewField, InlineEditor, TableList, ShowInInspector, ToggleButton, FreeRange, Required
 - ABGroupedEditor base editor for all MonoBehaviour/ScriptableObject
 - Unit tests for all attributes
 - Showcase script (UtilsInspectorShowcase)
@@ -119,5 +142,4 @@
 - 12 property drawers for all attributes
 - AB_SerializedDictionary serialized class
 - AutoCompleteText system
-- OdinStub for Odin Inspector compatibility
 - ABEditor base editor class
