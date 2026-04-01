@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.10] - 2026-04-01
+
+### Fixed
+- `AB_SerializedDictionaryPropertyDrawer` now resolves actual TKey/TValue types for custom classes — ObjectField filters by real type instead of generic `Object`, EnumPopup shows enum names, column headers display actual types
+- Fixed `ArgumentNullException` crash when clicking "+" on dictionaries with reference-type keys — CreateStaging now uses pure reflection instead of mutating serialized arrays (prevents `OnAfterDeserialize` from firing with null keys)
+
 ## [1.6.9] - 2026-04-01
 
 ### Added
