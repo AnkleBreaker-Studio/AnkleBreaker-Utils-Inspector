@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -8,7 +9,7 @@ using Object = UnityEngine.Object;
 namespace AnkleBreaker.Utils.Inspector.Editor
 {
     /// <summary>
-    /// Odin-style PropertyDrawer for AB_SerializedDictionary.
+    /// Custom PropertyDrawer for AB_SerializedDictionary.
     ///
     /// Staging values live in memory (not in the serialized arrays) so they
     /// never interfere with the Dictionary serialization round-trip.
@@ -49,6 +50,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         {
             public SerializedPropertyType keyType;
             public SerializedPropertyType valType;
+            public Type keyObjectType;  // actual C# Type for ObjectReference / Enum
+            public Type valObjectType;  // actual C# Type for ObjectReference / Enum
             public object keyValue;
             public object valValue;
         }
@@ -80,9 +83,54 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         static void SetPage(SerializedProperty p, int page) => s_CurrentPage[PK(p)] = page;
 
         // ─────────────────────────────────────────────────────────────
+        //  RESOLVE GENERIC TYPE ARGUMENTS (TKey, TValue)
+        // ─────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Walks the type hierarchy of <paramref name="fieldType"/> to find the
+        /// closed generic form of AB_SerializedDictionary&lt;TKey,TValue&gt;
+        /// and returns { typeof(TKey), typeof(TValue) }.
+        /// Returns null if resolution fails.
+        /// </summary>
+        static Type[] ResolveGenericArgs(Type fieldType)
+        {
+            if (fieldType == null) return null;
+
+            Type t = fieldType;
+            while (t != null)
+            {
+                if (t.IsGenericType)
+                {
+                    var def = t.GetGenericTypeDefinition();
+                    if (def == typeof(AB_SerializedDictionary<,>))
+                        return t.GetGenericArguments();
+                }
+                t = t.BaseType;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Friendly display name for a Type: strips namespaces, handles common types.
+        /// </summary>
+        static string NiceTypeName(Type t)
+        {
+            if (t == null) return "?";
+            if (t == typeof(int))    return "int";
+            if (t == typeof(float))  return "float";
+            if (t == typeof(bool))   return "bool";
+            if (t == typeof(string)) return "string";
+            if (t == typeof(Color))  return "Color";
+            if (t == typeof(Vector2)) return "Vector2";
+            if (t == typeof(Vector3)) return "Vector3";
+            if (t == typeof(Vector4)) return "Vector4";
+            if (t == typeof(Rect))   return "Rect";
+            return t.Name;
+        }
+
+        // ─────────────────────────────────────────────────────────────
         //  CREATE STAGING from array type info
         // ─────────────────────────────────────────────────────────────
-        static StagingEntry CreateStaging(SerializedProperty keys, SerializedProperty values)
+        StagingEntry CreateStaging(SerializedProperty keys, SerializedProperty values)
         {
             bool wasEmptyK = keys.arraySize == 0;
             bool wasEmptyV = values.arraySize == 0;
@@ -95,12 +143,19 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             var kProp = keys.GetArrayElementAtIndex(wasEmptyK ? 0 : keys.arraySize - 1);
             var vProp = values.GetArrayElementAtIndex(wasEmptyV ? 0 : values.arraySize - 1);
 
+            // Resolve actual C# types from the field's generic arguments
+            var genericArgs = ResolveGenericArgs(fieldInfo.FieldType);
+            Type keyObjType = genericArgs != null ? genericArgs[0] : typeof(Object);
+            Type valObjType = genericArgs != null ? genericArgs[1] : typeof(Object);
+
             var entry = new StagingEntry
             {
-                keyType  = kProp.propertyType,
-                valType  = vProp.propertyType,
-                keyValue = DefaultFor(kProp.propertyType),
-                valValue = DefaultFor(vProp.propertyType)
+                keyType       = kProp.propertyType,
+                valType       = vProp.propertyType,
+                keyObjectType = keyObjType,
+                valObjectType = valObjType,
+                keyValue      = DefaultFor(kProp.propertyType),
+                valValue      = DefaultFor(vProp.propertyType)
             };
 
             if (wasEmptyK) { keys.DeleteArrayElementAtIndex(0); }
@@ -155,7 +210,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             var menu = new GenericMenu();
             int count = keys.arraySize;
 
-            // ── Copy ─────────────────────────────────────────────────
             if (count > 0)
             {
                 menu.AddItem(new GUIContent("Copy"), false, () =>
@@ -181,7 +235,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 menu.AddDisabledItem(new GUIContent("Copy"));
             }
 
-            // ── Paste ────────────────────────────────────────────────
             string clipboard = EditorGUIUtility.systemCopyBuffer;
             bool canPaste = !string.IsNullOrEmpty(clipboard) && clipboard.TrimStart().StartsWith("{");
             if (!canPaste && !string.IsNullOrEmpty(s_ClipboardJson))
@@ -205,7 +258,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
             menu.AddSeparator("");
 
-            // ── Clear Dictionary ─────────────────────────────────────
             if (count > 0)
             {
                 menu.AddItem(new GUIContent("Clear Dictionary"), false, () =>
@@ -229,22 +281,15 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
         static string Unescape(string s) => s?.Replace("\\\"", "\"").Replace("\\\\", "\\") ?? "";
 
-        /// <summary>
-        /// Minimal JSON-like parser for pasting key-value pairs.
-        /// Expects format: { "key": "value", ... }
-        /// Values are written back through SetPropertyValue using the existing array element types.
-        /// </summary>
         void PasteDictionary(SerializedProperty property, SerializedProperty keys, SerializedProperty values, string json)
         {
             var pairs = ParseSimpleJson(json);
             if (pairs == null || pairs.Count == 0) return;
 
-            // Build set of existing keys to avoid duplicates
             var existingKeys = new HashSet<string>();
             for (int i = 0; i < keys.arraySize; i++)
                 existingKeys.Add(PropStr(keys.GetArrayElementAtIndex(i)));
 
-            // Detect element types (need at least one element or create temp)
             bool wasEmptyK = keys.arraySize == 0;
             bool wasEmptyV = values.arraySize == 0;
             if (wasEmptyK) keys.InsertArrayElementAtIndex(0);
@@ -264,7 +309,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             int added = 0;
             foreach (var pair in pairs)
             {
-                // Skip duplicates
                 string keyStr = pair.Key;
                 if (existingKeys.Contains(keyStr)) continue;
 
@@ -297,9 +341,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             _                                      => raw
         };
 
-        /// <summary>
-        /// Minimal parser: extracts "key": "value" pairs from a JSON-like string.
-        /// </summary>
         static List<KeyValuePair<string, string>> ParseSimpleJson(string json)
         {
             var result = new List<KeyValuePair<string, string>>();
@@ -311,7 +352,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
             while (pos < json.Length)
             {
-                // Find next quoted key
                 int kStart = json.IndexOf('"', pos);
                 if (kStart < 0) break;
                 int kEnd = FindClosingQuote(json, kStart + 1);
@@ -319,11 +359,9 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
                 string key = Unescape(json.Substring(kStart + 1, kEnd - kStart - 1));
 
-                // Find colon
                 int colon = json.IndexOf(':', kEnd + 1);
                 if (colon < 0) break;
 
-                // Find value (quoted string)
                 int vStart = json.IndexOf('"', colon + 1);
                 if (vStart < 0) break;
                 int vEnd = FindClosingQuote(json, vStart + 1);
@@ -362,14 +400,11 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             float h = HeaderH;
             int count = keys.arraySize;
 
-            // Staging area
             if (HasStaging(property))
                 h += Pad + RowH + Pad + RowH + Pad + AddBtnH + Pad;
 
-            // Separator + column headers
             h += SepH + Pad + ColHeaderH;
 
-            // Paginated rows only
             int page = ClampPage(GetPage(property), count);
             GetPageRange(page, count, out int start, out int end);
 
@@ -380,7 +415,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 h += Mathf.Max(kH, vH) + Pad;
             }
 
-            // Pagination bar
             if (NeedsPagination(count))
                 h += Pad + PaginationH;
 
@@ -404,6 +438,11 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             bool dark  = EditorGUIUtility.isProSkin;
             int  count = keys.arraySize;
 
+            // Resolve TKey / TValue types once per draw
+            var genericArgs = ResolveGenericArgs(fieldInfo.FieldType);
+            Type tKey = genericArgs != null ? genericArgs[0] : null;
+            Type tVal = genericArgs != null ? genericArgs[1] : null;
+
             // ── RIGHT-CLICK CONTEXT MENU ─────────────────────────────
             if (Event.current.type == EventType.ContextClick && pos.Contains(Event.current.mousePosition))
             {
@@ -417,7 +456,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             Rect hdr = new Rect(pos.x, pos.y, pos.width, HeaderH);
             EditorGUI.DrawRect(hdr, C_HeaderBg(dark));
 
-            // Foldout
             Color tc = dark ? new Color(0.85f, 0.85f, 0.85f) : new Color(0.15f, 0.15f, 0.15f);
             GUIStyle fs = new GUIStyle(EditorStyles.foldout) { fontStyle = FontStyle.Bold };
             fs.normal.textColor = fs.onNormal.textColor = fs.focused.textColor =
@@ -428,7 +466,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 new Rect(pos.x + 4, pos.y + 1, foldW, HeaderH - 2),
                 property.isExpanded, label.text, true, fs);
 
-            // "N Items"
             GUIStyle itemsStyle = new GUIStyle(EditorStyles.miniLabel)
             {
                 alignment = TextAnchor.MiddleRight,
@@ -438,7 +475,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 new Rect(pos.xMax - PlusBtnW - Pad - ItemsLabelW, pos.y, ItemsLabelW, HeaderH),
                 $"{count} Items", itemsStyle);
 
-            // "+" button
             if (GUI.Button(new Rect(pos.xMax - PlusBtnW - 2, pos.y + 2, PlusBtnW, HeaderH - 4), "+"))
             {
                 property.isExpanded = true;
@@ -478,14 +514,14 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 float fieldX = pos.x + BoxPad + StagingLabelW + Pad;
                 float fieldW = pos.width - BoxPad * 2 - StagingLabelW - Pad;
 
-                // Key field
+                // Key field — pass actual TKey type for correct ObjectField / EnumPopup
                 EditorGUI.LabelField(new Rect(pos.x + BoxPad, y, StagingLabelW, RowH), "Key", stageLbl);
-                stg.keyValue = DrawValueField(new Rect(fieldX, y, fieldW, RowH), stg.keyType, stg.keyValue);
+                stg.keyValue = DrawValueField(new Rect(fieldX, y, fieldW, RowH), stg.keyType, stg.keyValue, stg.keyObjectType);
                 y += RowH + Pad;
 
-                // Value field
+                // Value field — pass actual TValue type
                 EditorGUI.LabelField(new Rect(pos.x + BoxPad, y, StagingLabelW, RowH), "Value", stageLbl);
-                stg.valValue = DrawValueField(new Rect(fieldX, y, fieldW, RowH), stg.valType, stg.valValue);
+                stg.valValue = DrawValueField(new Rect(fieldX, y, fieldW, RowH), stg.valType, stg.valValue, stg.valObjectType);
                 y += RowH + Pad;
 
                 // Check duplicate key
@@ -500,7 +536,6 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     }
                 }
 
-                // Add button or duplicate warning
                 Rect addRect = new Rect(pos.x + BoxPad, y, pos.width - BoxPad * 2, AddBtnH);
                 if (isDuplicate)
                 {
@@ -530,7 +565,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             EditorGUI.DrawRect(new Rect(pos.x + 1, y, pos.width - 2, SepH), C_Sep(dark));
             y += SepH + Pad;
 
-            // ── COLUMN HEADERS ───────────────────────────────────────
+            // ── COLUMN HEADERS (show actual type names) ──────────────
             count = keys.arraySize;
 
             Rect colR = new Rect(pos.x, y, pos.width, ColHeaderH);
@@ -545,8 +580,11 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = dark ? new Color(0.6f, 0.6f, 0.6f) : new Color(0.35f, 0.35f, 0.35f) }
             };
-            EditorGUI.LabelField(new Rect(pos.x + BoxPad, y, keyColW, ColHeaderH), "Key", colStyle);
-            EditorGUI.LabelField(new Rect(pos.x + BoxPad + keyColW, y, valColW, ColHeaderH), "Value", colStyle);
+
+            string keyHeader = tKey != null ? $"Key ({NiceTypeName(tKey)})" : "Key";
+            string valHeader = tVal != null ? $"Value ({NiceTypeName(tVal)})" : "Value";
+            EditorGUI.LabelField(new Rect(pos.x + BoxPad, y, keyColW, ColHeaderH), keyHeader, colStyle);
+            EditorGUI.LabelField(new Rect(pos.x + BoxPad + keyColW, y, valColW, ColHeaderH), valHeader, colStyle);
             y += ColHeaderH;
 
             // ── TABLE ROWS (paginated) ───────────────────────────────
@@ -626,8 +664,9 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
         // ─────────────────────────────────────────────────────────────
         //  DRAW A VALUE FIELD (in-memory, not SerializedProperty)
+        //  objectType: actual C# Type for ObjectReference / Enum fields
         // ─────────────────────────────────────────────────────────────
-        static object DrawValueField(Rect rect, SerializedPropertyType type, object value)
+        static object DrawValueField(Rect rect, SerializedPropertyType type, object value, Type objectType)
         {
             switch (type)
             {
@@ -644,7 +683,22 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     return EditorGUI.Toggle(rect, value is bool b && b);
 
                 case SerializedPropertyType.Enum:
-                    return EditorGUI.IntField(rect, value is int ei ? ei : 0);
+                {
+                    // Use actual enum type if available for proper popup
+                    if (objectType != null && objectType.IsEnum)
+                    {
+                        Enum enumVal;
+                        if (value is Enum e)
+                            enumVal = e;
+                        else if (value is int ei)
+                            enumVal = (Enum)Enum.ToObject(objectType, ei);
+                        else
+                            enumVal = (Enum)Enum.ToObject(objectType, 0);
+
+                        return EditorGUI.EnumPopup(rect, enumVal);
+                    }
+                    return EditorGUI.IntField(rect, value is int idx ? idx : 0);
+                }
 
                 case SerializedPropertyType.Color:
                     return EditorGUI.ColorField(rect, value is Color c ? c : Color.white);
@@ -659,7 +713,13 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                     return EditorGUI.Vector4Field(rect, GUIContent.none, value is Vector4 v4 ? v4 : Vector4.zero);
 
                 case SerializedPropertyType.ObjectReference:
-                    return EditorGUI.ObjectField(rect, value as Object, typeof(Object), true);
+                {
+                    // Use actual type (e.g. MyScriptableObject) instead of generic Object
+                    Type filterType = (objectType != null && typeof(Object).IsAssignableFrom(objectType))
+                        ? objectType
+                        : typeof(Object);
+                    return EditorGUI.ObjectField(rect, value as Object, filterType, true);
+                }
 
                 case SerializedPropertyType.Rect:
                     return EditorGUI.RectField(rect, value is Rect r ? r : Rect.zero);
@@ -681,7 +741,12 @@ namespace AnkleBreaker.Utils.Inspector.Editor
                 case SerializedPropertyType.Integer:         prop.intValue = value is int i ? i : 0; break;
                 case SerializedPropertyType.Float:           prop.floatValue = value is float f ? f : 0f; break;
                 case SerializedPropertyType.Boolean:         prop.boolValue = value is bool b && b; break;
-                case SerializedPropertyType.Enum:            prop.enumValueIndex = value is int ei ? ei : 0; break;
+                case SerializedPropertyType.Enum:
+                    if (value is Enum enumVal)
+                        prop.enumValueIndex = Convert.ToInt32(enumVal);
+                    else
+                        prop.enumValueIndex = value is int ei ? ei : 0;
+                    break;
                 case SerializedPropertyType.Color:           prop.colorValue = value is Color c ? c : Color.white; break;
                 case SerializedPropertyType.Vector2:         prop.vector2Value = value is Vector2 v2 ? v2 : Vector2.zero; break;
                 case SerializedPropertyType.Vector3:         prop.vector3Value = value is Vector3 v3 ? v3 : Vector3.zero; break;
@@ -700,7 +765,8 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             SerializedPropertyType.Boolean         => (value is bool b && b).ToString(),
             SerializedPropertyType.Float           => (value is float f ? f : 0f).ToString("R"),
             SerializedPropertyType.String          => (string)(value ?? ""),
-            SerializedPropertyType.Enum            => (value is int ei ? ei : 0).ToString(),
+            SerializedPropertyType.Enum            => value is Enum e ? Convert.ToInt32(e).ToString()
+                                                       : (value is int ei ? ei : 0).ToString(),
             SerializedPropertyType.ObjectReference => value is Object o && o != null
                 ? o.GetInstanceID().ToString() : "null",
             SerializedPropertyType.Vector2         => (value is Vector2 v2 ? v2 : Vector2.zero).ToString(),
