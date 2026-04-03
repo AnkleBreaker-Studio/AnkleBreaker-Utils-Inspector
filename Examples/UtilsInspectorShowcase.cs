@@ -8,6 +8,7 @@ using AnkleBreaker.Utils.Inspector;
 /// </summary>
 public class UtilsInspectorShowcase : MonoBehaviour
 {
+    [SerializeField] private AB_SerializedDictionary<string, int> myDictionary;
     // ============================================================
     // SECTION HEADER STYLES
     // ============================================================
