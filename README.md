@@ -1,9 +1,13 @@
-# AnkleBreaker Studio - Utils Inspector
+<p align="center">
+  <img src="docs/inspector-attributes.gif" alt="AnkleBreaker Utils Inspector — Free Odin Inspector alternative with 40+ custom attributes" width="800" />
+</p>
+
+# AnkleBreaker Utils Inspector — Free Odin Inspector Alternative
+
+> **40+ custom inspector attributes and property drawers for Unity Editor.** ShowIf, BoxGroup, TabGroup, Button, Required, ProgressBar, PreviewField, TableList, and more — everything you need without the Odin price tag. Free and open source by [AnkleBreaker Studio](https://github.com/AnkleBreaker-Studio).
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-AnkleBreaker%20Studio-red?logo=github)](https://github.com/sponsors/AnkleBreaker-Studio)
 [![Asset Store](https://img.shields.io/badge/Asset%20Store-AnkleBreaker%20Studio-blue)](https://assetstore.unity.com/publishers/101837)
-
-Custom inspector attributes and property drawers for Unity Editor. A powerful alternative to Odin Inspector with enhanced features.
 
 ## Installation
 
@@ -110,6 +114,20 @@ https://github.com/AnkleBreaker-Studio/AnkleBreaker-Utils-Inspector.git#Release
 
 - `ABGroupedEditor` — Base editor class handling all grouping, conditional visibility, and layout
 - `ABEditor` — Base editor class with utility methods
+
+## Why Choose This Over Odin Inspector?
+
+Odin Inspector is a great tool, but it costs $55+ per seat. AnkleBreaker Utils Inspector provides the most commonly used attributes — ShowIf, BoxGroup, TabGroup, Button, Required, ProgressBar, PreviewField, TableList, and more — completely free and open source. It covers 90% of what most Unity developers use Odin for, at zero cost.
+
+## Part of the AnkleBreaker Ecosystem
+
+| Package | Description |
+|---------|-------------|
+| [AnkleBreaker-Core](https://github.com/AnkleBreaker-Studio/AnkleBreaker-Core) | Base classes, interfaces, delegates |
+| **Utils-Inspector** (this) | 40+ custom inspector attributes |
+| [Utils-Extensions](https://github.com/AnkleBreaker-Studio/AnkleBreaker-Utils-Extensions) | 50+ C# extension methods for Unity |
+| [Utils-UniversalTypes](https://github.com/AnkleBreaker-Studio/AnkleBreaker-Utils-UniversalTypes) | Universal wrappers for localization, assets, audio |
+| [Unity MCP](https://github.com/AnkleBreaker-Studio/unity-mcp-server) | 268 AI tools for Unity Editor control |
 
 ## Requirements
 
