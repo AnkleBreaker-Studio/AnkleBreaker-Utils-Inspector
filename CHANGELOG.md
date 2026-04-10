@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.11] - 2026-04-10
+
+### Fixed
+- Compilation error with InlineButtonDrawer when Odin Inspector is installed
+
 ## [1.6.10] - 2026-04-01
 
 ### Fixed
