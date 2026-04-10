@@ -604,8 +604,19 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
         #endregion
     }
+}
+#endif
 
-    #region Button Utility (preserved)
+#region Button Utility (always available — used by InlineButtonDrawer even when Odin is present)
+
+namespace AnkleBreaker.Utils.Inspector.Editor
+{
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
+    using UnityEditor;
+    using UnityEngine;
 
     public struct ButtonMethodInfo
     {
@@ -770,4 +781,3 @@ namespace AnkleBreaker.Utils.Inspector.Editor
 
     #endregion
 }
-#endif
