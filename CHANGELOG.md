@@ -1,17 +1,9 @@
 # Changelog
 
-## [1.7.0] - 2026-08-03
-
-### Added
-- `AB_ObjectCompat` (runtime) — the shared Unity object-identity fork, so every AnkleBreaker package resolves an object id from one place instead of carrying its own copy
-  - `StableId(Object)` returns the identity at full width on every supported editor, from 2022.3 up
-  - `StableIdAsInt(Object)` folds it into an `int` for callers that cannot widen — a value packed into a fixed 32-bit field, or an existing public API that returns an `int`
-- `AB_EditorObjectCompat` (editor) — `HoldsALostReference(SerializedProperty)`, the same fork for telling a reference whose asset is gone from an empty one
-
-The fork exists because neither spelling covers the supported range: `Object.GetInstanceID()` is clean through 6000.3, obsolete in 6000.4 and a compile error in 6000.5, while its `EntityId` replacement does not exist before 6000.4. Identities widen to eight bytes in 6000.5, so `StableId` returns a `long` and never the truncating implicit `int` conversion.
+## [1.6.12] - 2026-08-03
 
 ### Fixed
-- `AB_SerializedDictionaryPropertyDrawer` no longer calls `Object.GetInstanceID()`, a compile error (CS0619) on Unity 6000.5 that broke the whole editor assembly. Its three call sites route through `AB_ObjectCompat.StableId`
+- `AB_SerializedDictionaryPropertyDrawer` no longer calls `Object.GetInstanceID()`, a compile error (CS0619) on Unity 6000.5 that broke the whole editor assembly. Its three call sites route through an internal `AB_ObjectCompat.StableId`, forked on `UNITY_6000_4_OR_NEWER` because neither spelling covers the supported range: `GetInstanceID` is clean from 2022.3 through 6000.3, while its `EntityId` replacement does not exist before 6000.4
 
 ## [1.6.11] - 2026-04-10
 
