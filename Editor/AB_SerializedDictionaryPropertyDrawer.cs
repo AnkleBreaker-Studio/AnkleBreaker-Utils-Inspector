@@ -65,7 +65,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
         private static string s_ClipboardJson;
 
         static string PK(SerializedProperty p) =>
-            p.propertyPath + "##" + p.serializedObject.targetObject.GetInstanceID();
+            p.propertyPath + "##" + AB_ObjectCompat.StableId(p.serializedObject.targetObject);
 
         static bool HasStaging(SerializedProperty p) => s_Staging.ContainsKey(PK(p));
 
@@ -752,7 +752,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             SerializedPropertyType.Enum            => value is Enum e ? Convert.ToInt32(e).ToString()
                                                        : (value is int ei ? ei : 0).ToString(),
             SerializedPropertyType.ObjectReference => value is Object o && o != null
-                ? o.GetInstanceID().ToString() : "null",
+                ? AB_ObjectCompat.StableId(o).ToString() : "null",
             SerializedPropertyType.Vector2         => (value is Vector2 v2 ? v2 : Vector2.zero).ToString(),
             SerializedPropertyType.Vector3         => (value is Vector3 v3 ? v3 : Vector3.zero).ToString(),
             _                                      => value?.ToString() ?? "null"
@@ -783,7 +783,7 @@ namespace AnkleBreaker.Utils.Inspector.Editor
             SerializedPropertyType.String          => p.stringValue ?? "",
             SerializedPropertyType.Enum            => p.enumValueIndex.ToString(),
             SerializedPropertyType.ObjectReference => p.objectReferenceValue != null
-                ? p.objectReferenceValue.GetInstanceID().ToString() : "null",
+                ? AB_ObjectCompat.StableId(p.objectReferenceValue).ToString() : "null",
             SerializedPropertyType.Vector2         => p.vector2Value.ToString(),
             SerializedPropertyType.Vector3         => p.vector3Value.ToString(),
             _                                      => p.propertyPath
