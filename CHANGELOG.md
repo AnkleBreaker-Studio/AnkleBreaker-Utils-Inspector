@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.6.12] - 2026-08-03
+## [1.7.0] - 2026-09-16
 
 ### Fixed
 - `AB_SerializedDictionaryPropertyDrawer` no longer calls `Object.GetInstanceID()`, a compile error (CS0619) on Unity 6000.5 that broke the whole editor assembly. Its three call sites route through an internal `AB_ObjectCompat.StableId`, forked on `UNITY_6000_4_OR_NEWER` because neither spelling covers the supported range: `GetInstanceID` is clean from 2022.3 through 6000.3, while its `EntityId` replacement does not exist before 6000.4
+- `Editor/AB_ObjectCompat.cs` now ships with its `.meta`: Unity ignores a file without one in an immutable package folder, so `AB_ObjectCompat` was never compiled and the drawer still failed to build
 
 ## [1.6.11] - 2026-04-10
 
